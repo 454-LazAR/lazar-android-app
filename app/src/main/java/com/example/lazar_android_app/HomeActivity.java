@@ -1,4 +1,4 @@
-package com.example.lazar;
+package com.example.lazar_android_app;
 
 import androidx.appcompat.app.AppCompatActivity;
 

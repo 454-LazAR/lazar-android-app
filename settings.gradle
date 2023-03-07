@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "LazAR"
+rootProject.name = "lazar-android-app"
 include ':app'
