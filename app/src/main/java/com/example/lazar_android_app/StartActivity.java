@@ -58,16 +58,18 @@ public class StartActivity extends AppCompatActivity {
         EditText roomCodeField = findViewById(R.id.enterNickname);
         Button joinButton = findViewById(R.id.joinButton);
         String username = roomCodeField.getText().toString();
-    
-        usernames.add(username);
 
-        // hide the username entry field and join button
-        roomCodeField.setVisibility(View.GONE);
-        joinButton.setVisibility(View.GONE);
+        if (!usernames.contains(username)) {
+            usernames.add(username);
 
-        // notify roster's adapter that
-        // data in list is updated to
-        // update our list view.
-        adapter.notifyDataSetChanged();
+            // hide the username entry field and join button
+            roomCodeField.setVisibility(View.GONE);
+            joinButton.setVisibility(View.GONE);
+
+            // notify roster's adapter that
+            // data in list is updated to
+            // update our list view.
+            adapter.notifyDataSetChanged();
+        }
     }
 }
