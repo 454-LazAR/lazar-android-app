@@ -53,7 +53,6 @@
                 style="@style/ButtonHome"
                 android:text="GO" />
         </LinearLayout>
-
         <Button
             android:id="@+id/exit"
             android:onClick="onDestroy"
