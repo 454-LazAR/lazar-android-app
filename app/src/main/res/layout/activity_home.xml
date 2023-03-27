@@ -58,6 +58,14 @@
             android:onClick="onDestroy"
             android:text="@string/quit"
             style="@style/ButtonHome" />
+
+        <Button
+            android:id="@+id/gamebutton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/ButtonHome"
+            android:text="Game Activity"
+            android:onClick="openGame"/>
     </LinearLayout>
 
 </LinearLayout>

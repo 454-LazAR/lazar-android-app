@@ -2,7 +2,6 @@ package com.example.lazar_android_app;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-<<<<<<< HEAD
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -13,15 +12,6 @@ import android.widget.LinearLayout;
 public class HomeActivity extends AppCompatActivity {
 
     public static final boolean DEBUG = false;
-=======
-import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
-
-public class HomeActivity extends AppCompatActivity {
-
-    public static final boolean DEBUG = true;
->>>>>>> main
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,12 +27,9 @@ public class HomeActivity extends AppCompatActivity {
     public void hostGame(View view) {
         if (!DEBUG) {
             // Change view to StartActivity (search for nearby "joining")
-<<<<<<< HEAD
             Intent startStart = new Intent(getApplicationContext(), StartActivity.class);
             startStart.putExtra("mode", "HOST");
             startActivity(startStart);
-=======
->>>>>>> main
         }
         else {
             // DEBUG MODE ACTIONS
@@ -64,7 +51,6 @@ public class HomeActivity extends AppCompatActivity {
             btn.setText("CLICKED!");
         }
     }
-<<<<<<< HEAD
 
     public void submitRoomCode(View view) {
         EditText roomCodeField = findViewById(R.id.enterRoomCode);
@@ -76,6 +62,9 @@ public class HomeActivity extends AppCompatActivity {
         startStart.putExtra("roomCode", code);
         startActivity(startStart);
     }
-=======
->>>>>>> main
+
+    public void openGame(View view){
+        Intent startGame = new Intent(getApplicationContext(), GameActivity.class);
+        startActivity(startGame);
+    }
 }
