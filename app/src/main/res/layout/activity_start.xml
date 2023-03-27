@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".HomeActivity"
+    android:background="@drawable/hex_background"
+    android:orientation="vertical">
+
+    <!-- Connection Indicator -->
+    <TextView
+        android:id="@+id/serverConnection"
+        android:text="Loading..."
+        android:textColor="@color/red"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end" />
+
+    <TextView
+        android:id="@+id/lobbyBanner"
+        android:text="HOSTING"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content" />
+
+    <!-- Lobby Container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center">
+        <TextView
+            android:id="@+id/roomCode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="XXXXXX"
+            android:textSize="36dp" />
+        <EditText
+            android:id="@+id/enterNickname"
+            android:inputType="text"
+            android:hint="Enter Nickname"
+            style="@style/ButtonHome" />
+        <Button
+            android:id="@+id/joinButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="submitNickname"
+            style="@style/ButtonHome"
+            android:text="JOIN" />
+        <ListView
+            android:id="@+id/roster"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent" />
+
+    </LinearLayout>
+
+</LinearLayout>

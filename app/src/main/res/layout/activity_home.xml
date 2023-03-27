@@ -34,6 +34,25 @@
             android:onClick="joinGame"
             style="@style/ButtonHome"
             android:text="@string/join" />
+        <LinearLayout
+            android:id="@+id/joinCodeLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone">
+            <EditText
+                android:id="@+id/enterRoomCode"
+                android:inputType="number"
+                android:hint="CODE"
+                style="@style/ButtonHome" />
+            <Button
+                android:id="@+id/goButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="submitRoomCode"
+                style="@style/ButtonHome"
+                android:text="GO" />
+        </LinearLayout>
         <Button
             android:id="@+id/exit"
             android:onClick="onDestroy"
