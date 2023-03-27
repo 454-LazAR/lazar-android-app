@@ -3,4 +3,6 @@
     <string name="join">JOIN A GAME</string>
     <string name="quit">QUIT</string>
     <string name="app_name">LazAR</string>
+    <string name="capture">capture</string>
+    <string name="preview_area">preview_area</string>
 </resources>
