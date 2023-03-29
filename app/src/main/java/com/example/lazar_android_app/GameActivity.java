@@ -178,4 +178,6 @@ public class GameActivity extends AppCompatActivity {
 
         healthBar.setProgress(healthBar.getProgress() - 10);
     }
+
+
 }
