@@ -6,6 +6,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -40,6 +41,7 @@ public class GameActivity extends AppCompatActivity {
 
     PreviewView mPreviewView;
     ImageView captureImage;
+    ProgressBar healthBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +50,11 @@ public class GameActivity extends AppCompatActivity {
 
         mPreviewView = findViewById(R.id.camera);
         captureImage = findViewById(R.id.captureImg);
+        healthBar = findViewById(R.id.healthBar);
+        int min = healthBar.getMin();
+        int max = healthBar.getMax();
+        healthBar.setProgress(100);
+        healthBar.setScaleY(8f);
 
         if (allPermissionsGranted()) {
             startCamera(); //start camera if permission has been granted by user
