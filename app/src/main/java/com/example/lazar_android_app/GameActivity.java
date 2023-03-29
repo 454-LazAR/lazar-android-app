@@ -1,6 +1,8 @@
 package com.example.lazar_android_app;
 
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -35,10 +37,13 @@ import java.util.concurrent.Executors;
 
 public class GameActivity extends AppCompatActivity {
 
+    private boolean DEBUG = true;
+
     private Executor executor = Executors.newSingleThreadExecutor();
     private int REQUEST_CODE_PERMISSIONS = 1001;
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA"};
 
+    Camera camera;
     PreviewView mPreviewView;
     ImageView crosshair;
     ProgressBar healthBar;
@@ -53,6 +58,11 @@ public class GameActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game);
+
+        if (DEBUG) {
+            // makes the capture ImageView visible
+            findViewById(R.id.capture).setVisibility(View.VISIBLE);
+        }
 
         mPreviewView = findViewById(R.id.camera);
         crosshair = findViewById(R.id.crosshair);
@@ -119,7 +129,7 @@ public class GameActivity extends AppCompatActivity {
                 .setTargetRotation(this.getWindowManager().getDefaultDisplay().getRotation())
                 .build();
         preview.setSurfaceProvider(mPreviewView.createSurfaceProvider());
-        Camera camera = cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview, imageAnalysis, imageCapture);
+        camera = cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview, imageAnalysis, imageCapture);
     }
 
     /**
@@ -159,7 +169,12 @@ public class GameActivity extends AppCompatActivity {
     }
 
     public void fireLazar(View view) {
-        // grab image from @id/camera and do human detection on it, bozo
+        // grab image from mPreviewView and do human detection on it, bozo
+        Bitmap captureBmp = mPreviewView.getBitmap();
+        if (DEBUG) {
+            ImageView captureView = findViewById(R.id.capture);
+            captureView.setImageBitmap(captureBmp);
+        }
 
         healthBar.setProgress(healthBar.getProgress() - 10);
     }
