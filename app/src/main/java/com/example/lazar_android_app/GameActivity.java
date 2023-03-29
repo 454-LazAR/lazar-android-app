@@ -6,6 +6,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -40,7 +41,17 @@ public class GameActivity extends AppCompatActivity {
 
     PreviewView mPreviewView;
     ImageView captureImage;
+    ProgressBar healthBar;
 
+    //int crosshairX;
+    //int crosshairY;
+
+    /**
+     * During the create function, we boot up the layout and scale & set the health bar to 100.
+     * Next, permission to use the camera is asked to the user.
+     *
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,6 +59,15 @@ public class GameActivity extends AppCompatActivity {
 
         mPreviewView = findViewById(R.id.camera);
         captureImage = findViewById(R.id.captureImg);
+        healthBar = findViewById(R.id.healthBar);
+        int min = healthBar.getMin();
+        int max = healthBar.getMax();
+        healthBar.setProgress(100);
+        healthBar.setScaleY(8f);
+
+        // Get location of crosshair
+        //crosshairX = getResources().getDisplayMetrics().widthPixels / 2;
+        //crosshairY = getResources().getDisplayMetrics().heightPixels / 2;
 
         if (allPermissionsGranted()) {
             startCamera(); //start camera if permission has been granted by user
@@ -56,6 +76,9 @@ public class GameActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * This function starts the camera view after permissions have been granted.
+     */
     private void startCamera() {
 
         final ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
@@ -76,6 +99,11 @@ public class GameActivity extends AppCompatActivity {
         }, ContextCompat.getMainExecutor(this));
     }
 
+    /**
+     * Binds the ProcessCameraProvider object to a view, so it can be displayed on the UI.
+     *
+     * @param cameraProvider passed during startCamera()
+     */
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
 
         Preview preview = new Preview.Builder()
@@ -95,47 +123,14 @@ public class GameActivity extends AppCompatActivity {
                 .build();
         preview.setSurfaceProvider(mPreviewView.createSurfaceProvider());
         Camera camera = cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview, imageAnalysis, imageCapture);
-
-        captureImage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyyMMddHHmmss", Locale.US);
-                File file = new File(getBatchDirectoryName(), mDateFormat.format(new Date()) + ".jpg");
-
-                ImageCapture.OutputFileOptions outputFileOptions = new ImageCapture.OutputFileOptions.Builder(file).build();
-                imageCapture.takePicture(outputFileOptions, executor, new ImageCapture.OnImageSavedCallback() {
-                    @Override
-                    public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
-                        new Handler().post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(GameActivity.this, "Image Saved successfully", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void onError(@NonNull ImageCaptureException error) {
-                        error.printStackTrace();
-                    }
-                });
-            }
-        });
     }
 
-    public String getBatchDirectoryName() {
-
-        String app_folder_path = "";
-        app_folder_path = Environment.getExternalStorageDirectory().toString() + "/images";
-        File dir = new File(app_folder_path);
-        if (!dir.exists() && !dir.mkdirs()) {
-
-        }
-
-        return app_folder_path;
-    }
-
+    /**
+     * Boolean check if all permissions in {@link #REQUIRED_PERMISSIONS} are allowed
+     *
+     * @return true if all permissions in {@link #REQUIRED_PERMISSIONS} are allowed, false
+     * otherwise.
+     */
     private boolean allPermissionsGranted() {
 
         for (String permission : REQUIRED_PERMISSIONS) {
@@ -146,6 +141,13 @@ public class GameActivity extends AppCompatActivity {
         return true;
     }
 
+    /**
+     * @param requestCode The request code passed.
+     * @param permissions The requested permissions. Never null.
+     * @param grantResults The grant results for the corresponding permissions
+     *     which is either {@link android.content.pm.PackageManager#PERMISSION_GRANTED}
+     *     or {@link android.content.pm.PackageManager#PERMISSION_DENIED}. Never null.
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
