@@ -40,11 +40,8 @@ public class GameActivity extends AppCompatActivity {
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA"};
 
     PreviewView mPreviewView;
-    ImageView captureImage;
+    ImageView crosshair;
     ProgressBar healthBar;
-
-    //int crosshairX;
-    //int crosshairY;
 
     /**
      * During the create function, we boot up the layout and scale & set the health bar to 100.
@@ -58,7 +55,7 @@ public class GameActivity extends AppCompatActivity {
         setContentView(R.layout.activity_game);
 
         mPreviewView = findViewById(R.id.camera);
-        captureImage = findViewById(R.id.captureImg);
+        crosshair = findViewById(R.id.crosshair);
         healthBar = findViewById(R.id.healthBar);
         int min = healthBar.getMin();
         int max = healthBar.getMax();
