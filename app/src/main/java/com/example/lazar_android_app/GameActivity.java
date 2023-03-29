@@ -43,6 +43,9 @@ public class GameActivity extends AppCompatActivity {
     ImageView captureImage;
     ProgressBar healthBar;
 
+    //int crosshairX;
+    //int crosshairY;
+
     /**
      * During the create function, we boot up the layout and scale & set the health bar to 100.
      * Next, permission to use the camera is asked to the user.
@@ -61,6 +64,10 @@ public class GameActivity extends AppCompatActivity {
         int max = healthBar.getMax();
         healthBar.setProgress(100);
         healthBar.setScaleY(8f);
+
+        // Get location of crosshair
+        //crosshairX = getResources().getDisplayMetrics().widthPixels / 2;
+        //crosshairY = getResources().getDisplayMetrics().heightPixels / 2;
 
         if (allPermissionsGranted()) {
             startCamera(); //start camera if permission has been granted by user
