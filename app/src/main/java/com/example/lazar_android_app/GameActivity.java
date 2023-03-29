@@ -157,4 +157,10 @@ public class GameActivity extends AppCompatActivity {
             }
         }
     }
+
+    public void fireLazar(View view) {
+        // grab image from @id/camera and do human detection on it, bozo
+
+        healthBar.setProgress(healthBar.getProgress() - 10);
+    }
 }
