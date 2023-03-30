@@ -2,17 +2,21 @@ package com.example.lazar_android_app;
 
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
@@ -37,7 +41,11 @@ import java.util.concurrent.Executors;
 
 public class GameActivity extends AppCompatActivity {
 
+    public static final int OUTPUT_IMAGE_FORMAT_RGBA_8888 = 2;
+
     private boolean DEBUG = true;
+
+    private ObjectDetectorHelper objectDetector;
 
     private Executor executor = Executors.newSingleThreadExecutor();
     private int REQUEST_CODE_PERMISSIONS = 1001;
@@ -47,6 +55,7 @@ public class GameActivity extends AppCompatActivity {
     PreviewView mPreviewView;
     ImageView crosshair;
     ProgressBar healthBar;
+    Button fireButton;
 
     /**
      * During the create function, we boot up the layout and scale & set the health bar to 100.
@@ -67,6 +76,7 @@ public class GameActivity extends AppCompatActivity {
         mPreviewView = findViewById(R.id.camera);
         crosshair = findViewById(R.id.crosshair);
         healthBar = findViewById(R.id.healthBar);
+        fireButton = findViewById(R.id.fireButton);
         int min = healthBar.getMin();
         int max = healthBar.getMax();
         healthBar.setProgress(100);
@@ -114,6 +124,7 @@ public class GameActivity extends AppCompatActivity {
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
 
         Preview preview = new Preview.Builder()
+                .setTargetAspectRatio(AspectRatio.RATIO_4_3)
                 .build();
 
         CameraSelector cameraSelector = new CameraSelector.Builder()
@@ -121,7 +132,10 @@ public class GameActivity extends AppCompatActivity {
                 .build();
 
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                .setTargetAspectRatio(AspectRatio.RATIO_4_3)
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build();
+
 
         ImageCapture.Builder builder = new ImageCapture.Builder();
 
@@ -130,6 +144,16 @@ public class GameActivity extends AppCompatActivity {
                 .build();
         preview.setSurfaceProvider(mPreviewView.createSurfaceProvider());
         camera = cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview, imageAnalysis, imageCapture);
+
+        // initialize object detector
+        objectDetector = new ObjectDetectorHelper(
+                0.5f,
+                2,
+                3,
+                2,
+                0,
+                this,
+                null);
     }
 
     /**
@@ -175,8 +199,25 @@ public class GameActivity extends AppCompatActivity {
             ImageView captureView = findViewById(R.id.capture);
             captureView.setImageBitmap(captureBmp);
         }
+        // TO-DO: double check how the orientation is grabbed
+        int imageOrientation = mPreviewView.getDeviceRotationForRemoteDisplayMode();
+        if (DetectPerson(captureBmp, imageOrientation)) {
+            fireButton.setBackgroundColor(Color.GREEN);
+        }
+        else {
+            fireButton.setBackgroundColor(Color.RED);
+        }
 
         healthBar.setProgress(healthBar.getProgress() - 10);
+    }
+
+    // Returns true if a person was detected in the given bitmap
+    public boolean DetectPerson(Bitmap bitmap, int orientation) {
+        if (objectDetector.detect(bitmap, orientation)) {
+            Log.w("DETECTION OF PERSON", "A person was detected in the bitmap");
+            return true;
+        };
+        return false;
     }
 
 

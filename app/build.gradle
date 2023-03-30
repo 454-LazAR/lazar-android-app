@@ -2,6 +2,10 @@ plugins {
     id 'com.android.application'
 }
 
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
+apply plugin: 'de.undercouch.download'
+
 android {
     namespace 'com.example.lazar_android_app'
     compileSdk 33
@@ -27,6 +31,15 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 }
+
+
+// import DownloadModels task
+project.ext.ASSET_DIR = projectDir.toString() + '/src/main/assets'
+project.ext.TEST_ASSETS_DIR = projectDir.toString() + '/src/androidTest/assets'
+
+// Download default models; if you wish to use your own models then
+// place them in the "assets" directory and comment out this line.
+apply from:'../download_models.gradle'
 
 dependencies {
     def camerax_version = "1.0.0-beta05"
@@ -54,4 +67,8 @@ dependencies {
     def nav_version = "2.3.5"
     implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
     implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
+
+    // Kotlin dependencies
+    implementation 'androidx.core:core-ktx:1.5.0'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.7.10'
 }

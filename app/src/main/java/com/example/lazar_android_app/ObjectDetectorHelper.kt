@@ -103,7 +103,7 @@ class ObjectDetectorHelper(
         }
     }
 
-    fun detect(image: Bitmap, imageRotation: Int) {
+    fun detect(image: Bitmap, imageRotation: Int) : Boolean {
         if (objectDetector == null) {
             setupObjectDetector()
         }
@@ -130,6 +130,20 @@ class ObjectDetectorHelper(
                 inferenceTime,
                 tensorImage.height,
                 tensorImage.width)
+
+        Log.w("DETECTION TIME in MS", inferenceTime.toString())
+        Log.w("CURRENT DELEGATE", currentDelegate.toString())
+        Log.w("CURRENT MODEL", currentModel.toString())
+
+        // go through results and return true if a person was detected
+        if (results != null) {
+            for (result in results) {
+                if (result.categories[0].label == "person") {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     interface DetectorListener {
