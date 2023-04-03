@@ -2,7 +2,10 @@ package com.example.lazar_android_app;
 
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -48,6 +51,7 @@ public class GameActivity extends AppCompatActivity {
     public static final int OUTPUT_IMAGE_FORMAT_RGBA_8888 = 2;
 
     private boolean DEBUG = true;
+    private float minConfidence = (float) 0.6;
 
     private ObjectDetectorHelper objectDetector;
 
@@ -177,6 +181,8 @@ public class GameActivity extends AppCompatActivity {
     }
 
     /**
+     * Interface implementation
+     *
      * @param requestCode The request code passed.
      * @param permissions The requested permissions. Never null.
      * @param grantResults The grant results for the corresponding permissions
@@ -196,13 +202,14 @@ public class GameActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Onclick handler for the FIRE button.
+     *
+     * @param view
+     */
     public void fireLazar(View view) {
         // grab image from mPreviewView and do human detection on it, bozo
         Bitmap captureBmp = mPreviewView.getBitmap();
-        if (DEBUG) {
-            ImageView captureView = findViewById(R.id.capture);
-            captureView.setImageBitmap(captureBmp);
-        }
         // TO-DO: double check how the orientation is grabbed
         int imageOrientation = mPreviewView.getDeviceRotationForRemoteDisplayMode();
         if (DetectPerson(captureBmp, imageOrientation)) {
@@ -215,20 +222,92 @@ public class GameActivity extends AppCompatActivity {
         healthBar.setProgress(healthBar.getProgress() - 10);
     }
 
-    // Returns true if a person was detected in the given bitmap
+    /**
+     * Given a Bitmap, this function uses the ObjectDetectorHelper class to determine if a person is
+     * in the image, and if that person is within the crosshairs in the app (aka: the center X and Y
+     * coordinates of the image). If both conditions are true,
+     *
+     * @param bitmap The image passed in for person detection.
+     * @param orientation Orientation of the image for reorientation before detection.
+     * @return True if at least one person was detected in the given bitmap overlapping with the
+     * center of the crosshair, false otherwise.
+     */
     public boolean DetectPerson(Bitmap bitmap, int orientation) {
         ArrayList<Pair<RectF, Float>> personDetections = objectDetector.detect(bitmap, orientation);
 
+        int chX = bitmap.getWidth()/2;
+        int chY = bitmap.getHeight()/2;
+
+        ArrayList<Pair<RectF, Float>> hitPersons = new ArrayList<>();
+
+        Bitmap tempBitmap = null;
+        Canvas canvas = null;
+
         if (personDetections.size() != 0) {
-            for (Pair<RectF, Float> person : personDetections) {
-                Log.w("BOUNDING BOX COORDINATES", person.getFirst().toString());
-                Log.w("CONFIDENCE SCORE", person.getSecond().toString());
+            if (DEBUG) {
+                tempBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth(), bitmap.getHeight(), true);
+                canvas = new Canvas(tempBitmap);
             }
-            return true;
+
+            for (Pair<RectF, Float> person : personDetections) {
+                if (DEBUG) {
+                    Log.w("BOUNDING BOX COORDINATES", person.getFirst().toString());
+                    Log.w("CONFIDENCE SCORE", person.getSecond().toString());
+
+                    // draw bounding boxes for the mini-image!
+                    Paint p = new Paint();
+                    p.setStyle(Style.FILL_AND_STROKE);
+                    p.setAntiAlias(true);
+                    p.setFilterBitmap(true);
+                    p.setDither(true);
+                    p.setStrokeWidth(5);
+                    if (PointInRectF(person.getFirst(), chX, chY) /*&& person.getSecond() > minConfidence*/)
+                        p.setColor(Color.GREEN);
+                    else
+                        p.setColor((Color.RED));
+
+                    float x1 = person.getFirst().left;
+                    float x2 = person.getFirst().right;
+                    float y1 = person.getFirst().top;
+                    float y2 = person.getFirst().bottom;
+
+                    canvas.drawLine(x1, y1, x2, y1, p); //top
+                    canvas.drawLine(x1, y1, x1, y2, p); //left
+                    canvas.drawLine(x1, y2, x2, y2, p); //bottom
+                    canvas.drawLine(x2, y1, x2, y2, p); //right
+                }
+
+                // add person to "hitPersons" list if confidence is >0.6 and they semi-overlap the
+                // crosshair on the screen
+                if (PointInRectF(person.getFirst(), chX, chY) && person.getSecond() > minConfidence) hitPersons.add(person);
+            }
+
+            ImageView captureView = findViewById(R.id.capture);
+            captureView.setImageBitmap(tempBitmap);
         };
 
-        return false;
+        return hitPersons.size() > 0;
     }
 
+    /**
+     * This method checks if an arbitrary point defined by x and y coordinates is within the edges
+     * of a RectF bounding box and returns true if it is, false otherwise.
+     *
+     * @param bounds RectF object that contains the coordinates of the bounding box.
+     * @param x X-coordinate of an arbitrary point.
+     * @param y Y-coordinate of an arbitrary point.
+     * @return True if the arbitrary point is within the edges of the bounding box, false otherwise.
+     */
+    public boolean PointInRectF(RectF bounds, int x, int y) {
+        // left to right = less --> more
+        // top to bottom = less --> more
+        if (x > bounds.left && x < bounds.right &&
+            y > bounds.top && y < bounds.bottom) {
+            // X/Y coords are completely within the RectF boundary box
+            return true;
+        }
 
+        // at least one of the conditions isn't true, so it's not within the boundary box
+        return false;
+    }
 }
