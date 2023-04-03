@@ -3,6 +3,7 @@ package com.example.lazar_android_app;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Environment;
@@ -33,11 +34,14 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+
+import kotlin.Pair;
 
 public class GameActivity extends AppCompatActivity {
 
@@ -213,10 +217,16 @@ public class GameActivity extends AppCompatActivity {
 
     // Returns true if a person was detected in the given bitmap
     public boolean DetectPerson(Bitmap bitmap, int orientation) {
-        if (objectDetector.detect(bitmap, orientation)) {
-            Log.w("DETECTION OF PERSON", "A person was detected in the bitmap");
+        ArrayList<Pair<RectF, Float>> personDetections = objectDetector.detect(bitmap, orientation);
+
+        if (personDetections.size() != 0) {
+            for (Pair<RectF, Float> person : personDetections) {
+                Log.w("BOUNDING BOX COORDINATES", person.getFirst().toString());
+                Log.w("CONFIDENCE SCORE", person.getSecond().toString());
+            }
             return true;
         };
+
         return false;
     }
 

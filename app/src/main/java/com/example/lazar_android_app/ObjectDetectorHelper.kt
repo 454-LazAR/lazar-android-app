@@ -18,6 +18,7 @@ package com.example.lazar_android_app
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.RectF
 import android.os.SystemClock
 import android.util.Log
 import org.tensorflow.lite.gpu.CompatibilityList
@@ -103,7 +104,7 @@ class ObjectDetectorHelper(
         }
     }
 
-    fun detect(image: Bitmap, imageRotation: Int) : Boolean {
+    fun detect(image: Bitmap, imageRotation: Int) : ArrayList<Pair<RectF, Float>> {
         if (objectDetector == null) {
             setupObjectDetector()
         }
@@ -135,15 +136,23 @@ class ObjectDetectorHelper(
         Log.w("CURRENT DELEGATE", currentDelegate.toString())
         Log.w("CURRENT MODEL", currentModel.toString())
 
+        val personDetectionList = ArrayList<Pair<RectF, Float>>()
         // go through results and return true if a person was detected
         if (results != null) {
             for (result in results) {
+
                 if (result.categories[0].label == "person") {
-                    return true
+                    Log.w("BOUNDING BOX COORDINATES", result.boundingBox.toString())
+                    Log.w("CONFIDENCE SCORE", result.categories[0].score.toString())
+
+                    if (result.boundingBox != null && result.categories[0].score != null) {
+                        personDetectionList.add(Pair(result.boundingBox, result.categories[0].score))
+                    }
+
                 }
             }
         }
-        return false
+        return personDetectionList
     }
 
     interface DetectorListener {
