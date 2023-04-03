@@ -225,7 +225,13 @@ public class GameActivity extends AppCompatActivity {
     /**
      * Given a Bitmap, this function uses the ObjectDetectorHelper class to determine if a person is
      * in the image, and if that person is within the crosshairs in the app (aka: the center X and Y
-     * coordinates of the image). If both conditions are true,
+     * coordinates of the image). If both conditions are true, returns true to indicate a person has
+     * been hit!
+     *
+     * In DEBUG mode, draws GREEN bounding boxes around people detected who have score greater than
+     * minConfidence and overlap their bounding boxes with the center of the image (the crosshair).
+     * Draws RED bounding boxes around people detected who don't meet at least one of those
+     * conditions.
      *
      * @param bitmap The image passed in for person detection.
      * @param orientation Orientation of the image for reorientation before detection.
