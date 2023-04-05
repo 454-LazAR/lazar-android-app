@@ -4,8 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FF000000"
-    >
+    android:background="#FF000000" >
 
     <ProgressBar
         android:id="@+id/healthBar"
@@ -53,7 +52,6 @@
         android:textSize="60dp"
         android:onClick="fireLazar"
         android:textColor="@color/black"
-        android:backgroundTint="@color/red"
         app:layout_constraintBottom_toTopOf="@id/capture" />
 
     <ImageView

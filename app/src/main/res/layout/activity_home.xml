@@ -42,7 +42,6 @@
             android:visibility="gone">
             <EditText
                 android:id="@+id/enterRoomCode"
-                android:inputType="number"
                 android:hint="CODE"
                 style="@style/ButtonHome" />
             <Button
