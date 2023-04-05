@@ -17,7 +17,12 @@ import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.StatusLi
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.ClientProtocolException;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.HttpClient;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpGet;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpPost;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.entity.StringEntity;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.impl.client.DefaultHttpClient;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -25,6 +30,7 @@ import java.util.ArrayList;
 
 public class StartActivity extends AppCompatActivity {
 
+    private boolean hosting;
     ArrayList<String> usernames;
     ArrayAdapter<String> adapter;
     ListView roster;
@@ -37,8 +43,10 @@ public class StartActivity extends AppCompatActivity {
         Bundle extras = getIntent().getExtras();
 
         if (extras.getString("mode").equals("HOST")) {
+            hosting = true;
             startAsHost();
         } else {
+            hosting = false;
             startAsJoin(extras.getString("roomCode"));
         }
 
@@ -53,7 +61,7 @@ public class StartActivity extends AppCompatActivity {
 
     private void startAsHost() {
         // get "Hello World!" from server and set it as the room code
-        new RequestTask().execute("http://143.244.200.36:8080/hello-world");
+        //new RequestTask().execute("http://143.244.200.36:8080/hello-world");
 
         // generate room code on server and set room code view text
         String roomCode = "Loading..."; // TODO: get string from server
@@ -63,8 +71,7 @@ public class StartActivity extends AppCompatActivity {
         // SHOW "START" BUTTON but disable it (enables when usernames.count > 0)
     }
 
-    private void hostSetRoomCode(String res) {
-        String roomCode = res;
+    private void hostSetRoomCode(String roomCode) {
         TextView roomCodeView = findViewById(R.id.roomCode);
         roomCodeView.setText(roomCode);
     }
@@ -75,15 +82,15 @@ public class StartActivity extends AppCompatActivity {
     }
 
     public void submitNickname(View view) {
-        EditText roomCodeField = findViewById(R.id.enterNickname);
+        EditText nameField = findViewById(R.id.enterNickname);
         Button joinButton = findViewById(R.id.joinButton);
-        String username = roomCodeField.getText().toString();
+        String username = nameField.getText().toString();
 
         if (!usernames.contains(username)) {
             usernames.add(username);
 
             // hide the username entry field and join button
-            roomCodeField.setVisibility(View.GONE);
+            nameField.setVisibility(View.GONE);
             joinButton.setVisibility(View.GONE);
 
             // notify roster's adapter that
@@ -91,16 +98,39 @@ public class StartActivity extends AppCompatActivity {
             // update our list view.
             adapter.notifyDataSetChanged();
         }
+
+        if (hosting) {
+            JSONObject body = new JSONObject();
+            try {
+                body.put("username", (Object)username);
+                new RequestTask().execute("http://143.244.200.36:8080/create", body.toString());
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private class RequestTask extends AsyncTask<String, String, String> {
+        private String _uri = null;
+        private String _body = null;
+        HttpResponse response;
+
         @Override
         protected String doInBackground(String... uri) {
+            _uri = uri[0];
+            if (uri.length == 2) {
+                _body = uri[1];
+            }
             HttpClient httpclient = new DefaultHttpClient();
-            HttpResponse response;
             String responseString = null;
             try {
-                response = httpclient.execute(new HttpGet(uri[0]));
+                if (_uri.equals("http://143.244.200.36:8080/create")) {
+                    HttpPost req = new HttpPost(_uri);
+                    StringEntity params = new StringEntity(_body);
+                    req.addHeader("content-type", "application/json");
+                    req.setEntity(params);
+                    response = httpclient.execute(req);
+                }
                 StatusLine statusLine = response.getStatusLine();
                 if(statusLine.getStatusCode() == HttpStatus.SC_OK){
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -125,9 +155,24 @@ public class StartActivity extends AppCompatActivity {
             super.onPostExecute(result);
             //Do anything with response...
 
-            // WE WILL NEED A SWITCH OR IF-ELSE BLOCK BASED ON THE RESPONSE TO DETERMINE
-            // WHICH ACTIVITY METHOD TO CALL!!!
-            hostSetRoomCode(result);
+            JSONObject json = null;
+            try {
+                json = new JSONObject(result);
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+
+            // Switch based on executed API call
+            if (_uri.equals("http://143.244.200.36:8080/create")) {
+                try {
+                    String userId = json.getString("id");
+                    // TODO: Remember the userId
+                    String roomCode = json.getString("gameId");
+                    hostSetRoomCode(roomCode);
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
 }
