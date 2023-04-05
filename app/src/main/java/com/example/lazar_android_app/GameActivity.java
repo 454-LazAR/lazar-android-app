@@ -249,48 +249,48 @@ public class GameActivity extends AppCompatActivity {
         Bitmap tempBitmap = null;
         Canvas canvas = null;
 
-        if (personDetections.size() != 0) {
+        if (DEBUG) {
+            tempBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth(), bitmap.getHeight(), true);
+            canvas = new Canvas(tempBitmap);
+        }
+
+        for (Pair<RectF, Float> person : personDetections) {
             if (DEBUG) {
-                tempBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth(), bitmap.getHeight(), true);
-                canvas = new Canvas(tempBitmap);
+                Log.w("BOUNDING BOX COORDINATES", person.getFirst().toString());
+                Log.w("CONFIDENCE SCORE", person.getSecond().toString());
+
+                // draw bounding boxes for the mini-image!
+                Paint p = new Paint();
+                p.setStyle(Style.FILL_AND_STROKE);
+                p.setAntiAlias(true);
+                p.setFilterBitmap(true);
+                p.setDither(true);
+                p.setStrokeWidth(5);
+                if (PointInRectF(person.getFirst(), chX, chY) /*&& person.getSecond() > minConfidence*/)
+                    p.setColor(Color.GREEN);
+                else
+                    p.setColor((Color.RED));
+
+                float x1 = person.getFirst().left;
+                float x2 = person.getFirst().right;
+                float y1 = person.getFirst().top;
+                float y2 = person.getFirst().bottom;
+
+                canvas.drawLine(x1, y1, x2, y1, p); //top
+                canvas.drawLine(x1, y1, x1, y2, p); //left
+                canvas.drawLine(x1, y2, x2, y2, p); //bottom
+                canvas.drawLine(x2, y1, x2, y2, p); //right
             }
 
-            for (Pair<RectF, Float> person : personDetections) {
-                if (DEBUG) {
-                    Log.w("BOUNDING BOX COORDINATES", person.getFirst().toString());
-                    Log.w("CONFIDENCE SCORE", person.getSecond().toString());
+            // add person to "hitPersons" list if confidence is >0.6 and they semi-overlap the
+            // crosshair on the screen
+            if (PointInRectF(person.getFirst(), chX, chY) && person.getSecond() > minConfidence) hitPersons.add(person);
+        }
 
-                    // draw bounding boxes for the mini-image!
-                    Paint p = new Paint();
-                    p.setStyle(Style.FILL_AND_STROKE);
-                    p.setAntiAlias(true);
-                    p.setFilterBitmap(true);
-                    p.setDither(true);
-                    p.setStrokeWidth(5);
-                    if (PointInRectF(person.getFirst(), chX, chY) /*&& person.getSecond() > minConfidence*/)
-                        p.setColor(Color.GREEN);
-                    else
-                        p.setColor((Color.RED));
-
-                    float x1 = person.getFirst().left;
-                    float x2 = person.getFirst().right;
-                    float y1 = person.getFirst().top;
-                    float y2 = person.getFirst().bottom;
-
-                    canvas.drawLine(x1, y1, x2, y1, p); //top
-                    canvas.drawLine(x1, y1, x1, y2, p); //left
-                    canvas.drawLine(x1, y2, x2, y2, p); //bottom
-                    canvas.drawLine(x2, y1, x2, y2, p); //right
-                }
-
-                // add person to "hitPersons" list if confidence is >0.6 and they semi-overlap the
-                // crosshair on the screen
-                if (PointInRectF(person.getFirst(), chX, chY) && person.getSecond() > minConfidence) hitPersons.add(person);
-            }
-
+        if (DEBUG) {
             ImageView captureView = findViewById(R.id.capture);
             captureView.setImageBitmap(tempBitmap);
-        };
+        }
 
         return hitPersons.size() > 0;
     }
