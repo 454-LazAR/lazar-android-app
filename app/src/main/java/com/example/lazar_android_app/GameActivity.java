@@ -213,10 +213,10 @@ public class GameActivity extends AppCompatActivity {
         // TO-DO: double check how the orientation is grabbed
         int imageOrientation = mPreviewView.getDeviceRotationForRemoteDisplayMode();
         if (DetectPerson(captureBmp, imageOrientation)) {
-            fireButton.setBackgroundColor(Color.GREEN);
+            fireButton.setTextColor(Color.GREEN);
         }
         else {
-            fireButton.setBackgroundColor(Color.RED);
+            fireButton.setTextColor(Color.BLACK);
         }
 
         healthBar.setProgress(healthBar.getProgress() - 10);
