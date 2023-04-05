@@ -52,7 +52,6 @@
         android:textSize="60dp"
         android:onClick="fireLazar"
         android:textColor="@color/black"
-        android:backgroundTint="@color/red"
         app:layout_constraintBottom_toTopOf="@id/capture" />
 
     <ImageView

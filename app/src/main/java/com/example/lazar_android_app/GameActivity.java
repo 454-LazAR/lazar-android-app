@@ -85,6 +85,7 @@ public class GameActivity extends AppCompatActivity {
         crosshair = findViewById(R.id.crosshair);
         healthBar = findViewById(R.id.healthBar);
         fireButton = findViewById(R.id.fireButton);
+        fireButton.setBackgroundColor(Color.RED);
         int min = healthBar.getMin();
         int max = healthBar.getMax();
         healthBar.setProgress(100);
@@ -213,10 +214,10 @@ public class GameActivity extends AppCompatActivity {
         // TO-DO: double check how the orientation is grabbed
         int imageOrientation = mPreviewView.getDeviceRotationForRemoteDisplayMode();
         if (DetectPerson(captureBmp, imageOrientation)) {
-            fireButton.setTextColor(Color.GREEN);
+            fireButton.setBackgroundColor(Color.GREEN);
         }
         else {
-            fireButton.setTextColor(Color.BLACK);
+            fireButton.setBackgroundColor(Color.RED);
         }
 
         healthBar.setProgress(healthBar.getProgress() - 10);
