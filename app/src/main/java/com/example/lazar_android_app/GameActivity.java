@@ -54,6 +54,7 @@ public class GameActivity extends AppCompatActivity {
     private float minConfidence = (float) 0.6;
 
     private ObjectDetectorHelper objectDetector;
+    private ImageSegmentationHelper imageSegmentor;
 
     private Executor executor = Executors.newSingleThreadExecutor();
     private int REQUEST_CODE_PERMISSIONS = 1001;
@@ -162,6 +163,13 @@ public class GameActivity extends AppCompatActivity {
                 0,
                 this,
                 null);
+
+        imageSegmentor = new ImageSegmentationHelper(
+                4,
+                2,
+                this,
+                null
+        );
     }
 
     /**
@@ -239,6 +247,24 @@ public class GameActivity extends AppCompatActivity {
      * center of the crosshair, false otherwise.
      */
     public boolean DetectPerson(Bitmap bitmap, int orientation) {
+
+//        int chX = bitmap.getWidth()/2;
+//        int chY = bitmap.getHeight()/2;
+//
+//        Bitmap returnedBitmap = imageSegmentor.segment(bitmap, orientation);
+//
+//        ImageView captureView = findViewById(R.id.capture);
+//        Bitmap tempBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth(), bitmap.getHeight(), true);
+//        Canvas canvas = new Canvas(tempBitmap);
+//        Paint paint = new Paint(Paint.FILTER_BITMAP_FLAG);
+//        canvas.drawBitmap(returnedBitmap, 0, 0, paint);
+//        captureView.setImageBitmap(tempBitmap);
+//
+//        if (returnedBitmap.getPixel(chX, chY) != 0) {
+//            return true;
+//        }
+
+
         ArrayList<Pair<RectF, Float>> personDetections = objectDetector.detect(bitmap, orientation);
 
         int chX = bitmap.getWidth()/2;
@@ -255,6 +281,11 @@ public class GameActivity extends AppCompatActivity {
         }
 
         for (Pair<RectF, Float> person : personDetections) {
+            float x1 = person.getFirst().left;
+            float x2 = person.getFirst().right;
+            float y1 = person.getFirst().top;
+            float y2 = person.getFirst().bottom;
+
             if (DEBUG) {
                 Log.w("BOUNDING BOX COORDINATES", person.getFirst().toString());
                 Log.w("CONFIDENCE SCORE", person.getSecond().toString());
@@ -271,10 +302,6 @@ public class GameActivity extends AppCompatActivity {
                 else
                     p.setColor((Color.RED));
 
-                float x1 = person.getFirst().left;
-                float x2 = person.getFirst().right;
-                float y1 = person.getFirst().top;
-                float y2 = person.getFirst().bottom;
 
                 canvas.drawLine(x1, y1, x2, y1, p); //top
                 canvas.drawLine(x1, y1, x1, y2, p); //left
@@ -284,7 +311,14 @@ public class GameActivity extends AppCompatActivity {
 
             // add person to "hitPersons" list if confidence is >0.6 and they semi-overlap the
             // crosshair on the screen
-            if (PointInRectF(person.getFirst(), chX, chY) && person.getSecond() > minConfidence) hitPersons.add(person);
+            if (PointInRectF(person.getFirst(), chX, chY) && person.getSecond() > minConfidence) {
+
+               //Bitmap resizeBitmap = Bitmap.createBitmap(bitmap, Math.max(0, (int) x2), Math.max(0, (int) y2), Math.min((int) x2 - (int) x1, bitmap.getWidth()), Math.min(bitmap.getHeight(), (int) y2 - (int) y1));
+                Bitmap returnedBitmap = imageSegmentor.segment(tempBitmap, orientation);
+                if (returnedBitmap.getPixel(chX, chY) != 0) {
+                    hitPersons.add(person);
+                }
+            }
         }
 
         if (DEBUG) {
