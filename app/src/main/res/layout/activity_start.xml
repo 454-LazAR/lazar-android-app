@@ -12,7 +12,7 @@
     <!-- Connection Indicator -->
     <TextView
         android:id="@+id/serverConnection"
-        android:text="Loading..."
+        android:text="Not Connected"
         android:textColor="@color/red"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -34,7 +34,7 @@
             android:id="@+id/roomCode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="XXXXXX"
+            android:text="Waiting..."
             android:textSize="36dp" />
         <EditText
             android:id="@+id/enterNickname"

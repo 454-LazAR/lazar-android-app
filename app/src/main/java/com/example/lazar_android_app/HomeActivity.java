@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -18,8 +19,6 @@ import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.StatusLi
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.ClientProtocolException;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.HttpClient;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpGet;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpPost;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.entity.StringEntity;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.impl.client.DefaultHttpClient;
 
 import org.json.JSONException;
@@ -32,13 +31,42 @@ public class HomeActivity extends AppCompatActivity {
 
     public static final boolean DEBUG = false;
 
+    private Handler connHandler;
+    private Runnable connRunnable;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        // do this with a repeating THREAD to update connection indicator
-        new RequestTask().execute("http://143.244.200.36:8080/hello-world");
+        // Define async thread to run to update connection
+        connHandler = new Handler();
+        connRunnable = new Runnable() {
+            @Override
+            public void run() {
+                // Do your background task here
+                new RequestTask().execute("http://143.244.200.36:8080/hello-world");
+
+                connHandler.postDelayed(this, 2000); // Schedule the task to run again after 2 seconds
+            }
+        };
+
+        // Start the async connection thread
+        startConnTask();
+    }
+
+    /**
+     * Run this to start the async connection thread!
+     */
+    private void startConnTask() {
+        connHandler.post(connRunnable);
+    }
+
+    /**
+     * Run this to stop the async connection thread!
+     */
+    private void stopConnTask() {
+        connHandler.removeCallbacks(connRunnable);
     }
 
     @Override
@@ -51,6 +79,7 @@ public class HomeActivity extends AppCompatActivity {
             // Change view to StartActivity (search for nearby "joining")
             Intent startStart = new Intent(getApplicationContext(), StartActivity.class);
             startStart.putExtra("mode", "HOST");
+            stopConnTask();
             startActivity(startStart);
         }
         else {
@@ -82,13 +111,21 @@ public class HomeActivity extends AppCompatActivity {
 
         startStart.putExtra("mode", "JOIN");
         startStart.putExtra("roomCode", code);
+        stopConnTask();
         startActivity(startStart);
     }
 
-    private void setConnected() {
+    private void setConnected(boolean connected) {
         TextView connection = findViewById(R.id.serverConnection);
-        connection.setTextColor(Color.GREEN);
-        connection.setText("Connected!");
+
+        if (connected) {
+            connection.setTextColor(Color.GREEN);
+            connection.setText("Connected!");
+        }
+        else {
+            connection.setTextColor(Color.RED);
+            connection.setText("Not Connected");
+        }
     }
 
     public void openGame(View view){
@@ -139,16 +176,23 @@ public class HomeActivity extends AppCompatActivity {
             //Do anything with response...
 
             JSONObject json = null;
-            try {
-                json = new JSONObject(result);
-            } catch (JSONException e) {
-                // don't throw anything yet
-                // this won't be a JSON after GET /hello-world
+            if (result != null) {
+                try {
+                    json = new JSONObject(result);
+                } catch (JSONException e) {
+                    // don't throw anything yet
+                    // this won't be a JSON after GET /hello-world
+                }
             }
 
             // Switch based on executed API call
-            if (_uri.equals("http://143.244.200.36:8080/hello-world")) {
-                if (result.equals("Hello world!")) setConnected();
+            if (result == null) {
+                // fail to connect to server
+                setConnected(false);
+            }
+            else if (result.equals("Hello world!")) {
+                // server connection success
+                setConnected(true);
             }
         }
     }
