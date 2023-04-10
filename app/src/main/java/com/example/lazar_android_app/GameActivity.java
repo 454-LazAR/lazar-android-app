@@ -157,16 +157,15 @@ public class GameActivity extends AppCompatActivity {
         // initialize object detector
         objectDetector = new ObjectDetectorHelper(
                 0.5f,
-                2,
+                1,
                 3,
                 2,
                 0,
                 this,
                 null);
 
-        // intialize image segmentor
         imageSegmentor = new ImageSegmentationHelper(
-                4,
+                1,
                 2,
                 this,
                 null
@@ -252,6 +251,7 @@ public class GameActivity extends AppCompatActivity {
         int chX = bitmap.getWidth()/2;
         int chY = bitmap.getHeight()/2;
 
+
         Bitmap returnedBitmap = imageSegmentor.segment(bitmap, orientation);
 
         ImageView captureView = findViewById(R.id.capture);
@@ -266,6 +266,7 @@ public class GameActivity extends AppCompatActivity {
         }
 
         return false;
+
 
 //        ArrayList<Pair<RectF, Float>> personDetections = objectDetector.detect(bitmap, orientation);
 //
@@ -316,10 +317,11 @@ public class GameActivity extends AppCompatActivity {
 //            if (PointInRectF(person.getFirst(), chX, chY) && person.getSecond() > minConfidence) {
 //
 //               //Bitmap resizeBitmap = Bitmap.createBitmap(bitmap, Math.max(0, (int) x2), Math.max(0, (int) y2), Math.min((int) x2 - (int) x1, bitmap.getWidth()), Math.min(bitmap.getHeight(), (int) y2 - (int) y1));
-//                Bitmap returnedBitmap = imageSegmentor.segment(tempBitmap, orientation);
+//                Bitmap returnedBitmap = imageSegmentor.segment(bitmap, orientation);
 //                if (returnedBitmap.getPixel(chX, chY) != 0) {
 //                    hitPersons.add(person);
 //                }
+//                hitPersons.add(person);
 //            }
 //        }
 //
