@@ -58,11 +58,21 @@ public class StartActivity extends AppCompatActivity {
 
         Bundle extras = getIntent().getExtras();
 
+        // update room roster
+        roster = findViewById(R.id.roster);
+        usernames = new ArrayList<>();
+        adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_list_item_1,
+                usernames);
+        roster.setAdapter(adapter);
+
         if (extras.getString("mode").equals("HOST")) {
             hosting = true;
         } else {
             hosting = false;
             _roomCode = extras.getString("roomCode");
+            TextView roomCodeView = findViewById(R.id.roomCode);
+            roomCodeView.setText(_roomCode);
         }
 
         // update room roster
@@ -99,7 +109,7 @@ public class StartActivity extends AppCompatActivity {
                     throw new RuntimeException(e);
                 }
 
-                lobbyHandler.postDelayed(this, 1000); // Schedule the task to run again after 1 second
+                lobbyHandler.postDelayed(this, 2000); // Schedule the task to run again after 1 second
             }
         };
 
@@ -232,20 +242,17 @@ public class StartActivity extends AppCompatActivity {
                 }
                 else if (_uri.equals("http://143.244.200.36:8080/lobby-ping")) {
                     // Build the GET request with params
-                    URIBuilder builder = new URIBuilder(_uri);
-                    builder.setParameter("playerId", _userId);
-                    URI req_uri = builder.build();
-                    HttpGet req = new HttpGet(req_uri);
+                    HttpPost req = new HttpPost(_uri);
+                    StringEntity params = new StringEntity(_body);
+                    req.addHeader("content-type", "application/json");
+                    req.setEntity(params);
                     response = httpclient.execute(req);
                 }
                 else if (_uri.equals("http://143.244.200.36:8080/join")) {
-                    // Build the GET request with params from a JSON body
-                    URIBuilder builder = new URIBuilder(_uri);
-                    JSONObject json = new JSONObject(_body);
-                    builder.setParameter("username", json.getString("username"));
-                    builder.setParameter("gameId", json.getString("gameId"));
-                    URI req_uri = builder.build();
-                    HttpGet req = new HttpGet(req_uri);
+                    HttpPost req = new HttpPost(_uri);
+                    StringEntity params = new StringEntity(_body);
+                    req.addHeader("content-type", "application/json");
+                    req.setEntity(params);
                     response = httpclient.execute(req);
                 }
 
@@ -265,10 +272,6 @@ public class StartActivity extends AppCompatActivity {
                 //TODO Handle problems..
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
-            } catch (JSONException e) {
-                throw new RuntimeException(e);
             }
             return responseString;
         }
@@ -321,6 +324,9 @@ public class StartActivity extends AppCompatActivity {
                     }
                     // update "usernames" ArrayList
                     usernames = new_usernames;
+                    adapter.clear();
+                    adapter.addAll(usernames);
+                    adapter.notifyDataSetChanged();
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
