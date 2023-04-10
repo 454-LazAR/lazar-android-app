@@ -164,6 +164,7 @@ public class GameActivity extends AppCompatActivity {
                 this,
                 null);
 
+        // intialize image segmentor
         imageSegmentor = new ImageSegmentationHelper(
                 4,
                 2,
@@ -248,85 +249,86 @@ public class GameActivity extends AppCompatActivity {
      */
     public boolean DetectPerson(Bitmap bitmap, int orientation) {
 
-//        int chX = bitmap.getWidth()/2;
-//        int chY = bitmap.getHeight()/2;
-//
-//        Bitmap returnedBitmap = imageSegmentor.segment(bitmap, orientation);
-//
-//        ImageView captureView = findViewById(R.id.capture);
-//        Bitmap tempBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth(), bitmap.getHeight(), true);
-//        Canvas canvas = new Canvas(tempBitmap);
-//        Paint paint = new Paint(Paint.FILTER_BITMAP_FLAG);
-//        canvas.drawBitmap(returnedBitmap, 0, 0, paint);
-//        captureView.setImageBitmap(tempBitmap);
-//
-//        if (returnedBitmap.getPixel(chX, chY) != 0) {
-//            return true;
-//        }
-
-
-        ArrayList<Pair<RectF, Float>> personDetections = objectDetector.detect(bitmap, orientation);
-
         int chX = bitmap.getWidth()/2;
         int chY = bitmap.getHeight()/2;
 
-        ArrayList<Pair<RectF, Float>> hitPersons = new ArrayList<>();
+        Bitmap returnedBitmap = imageSegmentor.segment(bitmap, orientation);
 
-        Bitmap tempBitmap = null;
-        Canvas canvas = null;
+        ImageView captureView = findViewById(R.id.capture);
+        Bitmap tempBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth(), bitmap.getHeight(), true);
+        Canvas canvas = new Canvas(tempBitmap);
+        Paint paint = new Paint(Paint.FILTER_BITMAP_FLAG);
+        canvas.drawBitmap(returnedBitmap, 0, 0, paint);
+        captureView.setImageBitmap(tempBitmap);
 
-        if (DEBUG) {
-            tempBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth(), bitmap.getHeight(), true);
-            canvas = new Canvas(tempBitmap);
+        if (returnedBitmap.getPixel(chX, chY) != 0) {
+            return true;
         }
 
-        for (Pair<RectF, Float> person : personDetections) {
-            float x1 = person.getFirst().left;
-            float x2 = person.getFirst().right;
-            float y1 = person.getFirst().top;
-            float y2 = person.getFirst().bottom;
+        return false;
 
-            if (DEBUG) {
-                Log.w("BOUNDING BOX COORDINATES", person.getFirst().toString());
-                Log.w("CONFIDENCE SCORE", person.getSecond().toString());
-
-                // draw bounding boxes for the mini-image!
-                Paint p = new Paint();
-                p.setStyle(Style.FILL_AND_STROKE);
-                p.setAntiAlias(true);
-                p.setFilterBitmap(true);
-                p.setDither(true);
-                p.setStrokeWidth(5);
-                if (PointInRectF(person.getFirst(), chX, chY) /*&& person.getSecond() > minConfidence*/)
-                    p.setColor(Color.GREEN);
-                else
-                    p.setColor((Color.RED));
-
-
-                canvas.drawLine(x1, y1, x2, y1, p); //top
-                canvas.drawLine(x1, y1, x1, y2, p); //left
-                canvas.drawLine(x1, y2, x2, y2, p); //bottom
-                canvas.drawLine(x2, y1, x2, y2, p); //right
-            }
-
-            // add person to "hitPersons" list if confidence is >0.6 and they semi-overlap the
-            // crosshair on the screen
-            if (PointInRectF(person.getFirst(), chX, chY) && person.getSecond() > minConfidence) {
-
-               //Bitmap resizeBitmap = Bitmap.createBitmap(bitmap, Math.max(0, (int) x2), Math.max(0, (int) y2), Math.min((int) x2 - (int) x1, bitmap.getWidth()), Math.min(bitmap.getHeight(), (int) y2 - (int) y1));
-                Bitmap returnedBitmap = imageSegmentor.segment(tempBitmap, orientation);
-                if (returnedBitmap.getPixel(chX, chY) != 0) {
-                    hitPersons.add(person);
-                }
-            }
-        }
-
-        if (DEBUG) {
-            ImageView captureView = findViewById(R.id.capture);
-            captureView.setImageBitmap(tempBitmap);
-        }
-
-        return hitPersons.size() > 0;
+//        ArrayList<Pair<RectF, Float>> personDetections = objectDetector.detect(bitmap, orientation);
+//
+//        int chX = bitmap.getWidth()/2;
+//        int chY = bitmap.getHeight()/2;
+//
+//        ArrayList<Pair<RectF, Float>> hitPersons = new ArrayList<>();
+//
+//        Bitmap tempBitmap = null;
+//        Canvas canvas = null;
+//
+//        if (DEBUG) {
+//            tempBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth(), bitmap.getHeight(), true);
+//            canvas = new Canvas(tempBitmap);
+//        }
+//
+//        for (Pair<RectF, Float> person : personDetections) {
+//            float x1 = person.getFirst().left;
+//            float x2 = person.getFirst().right;
+//            float y1 = person.getFirst().top;
+//            float y2 = person.getFirst().bottom;
+//
+//            if (DEBUG) {
+//                Log.w("BOUNDING BOX COORDINATES", person.getFirst().toString());
+//                Log.w("CONFIDENCE SCORE", person.getSecond().toString());
+//
+//                // draw bounding boxes for the mini-image!
+//                Paint p = new Paint();
+//                p.setStyle(Style.FILL_AND_STROKE);
+//                p.setAntiAlias(true);
+//                p.setFilterBitmap(true);
+//                p.setDither(true);
+//                p.setStrokeWidth(5);
+//                if (PointInRectF(person.getFirst(), chX, chY) /*&& person.getSecond() > minConfidence*/)
+//                    p.setColor(Color.GREEN);
+//                else
+//                    p.setColor((Color.RED));
+//
+//
+//                canvas.drawLine(x1, y1, x2, y1, p); //top
+//                canvas.drawLine(x1, y1, x1, y2, p); //left
+//                canvas.drawLine(x1, y2, x2, y2, p); //bottom
+//                canvas.drawLine(x2, y1, x2, y2, p); //right
+//            }
+//
+//            // add person to "hitPersons" list if confidence is >0.6 and they semi-overlap the
+//            // crosshair on the screen
+//            if (PointInRectF(person.getFirst(), chX, chY) && person.getSecond() > minConfidence) {
+//
+//               //Bitmap resizeBitmap = Bitmap.createBitmap(bitmap, Math.max(0, (int) x2), Math.max(0, (int) y2), Math.min((int) x2 - (int) x1, bitmap.getWidth()), Math.min(bitmap.getHeight(), (int) y2 - (int) y1));
+//                Bitmap returnedBitmap = imageSegmentor.segment(tempBitmap, orientation);
+//                if (returnedBitmap.getPixel(chX, chY) != 0) {
+//                    hitPersons.add(person);
+//                }
+//            }
+//        }
+//
+//        if (DEBUG) {
+//            ImageView captureView = findViewById(R.id.capture);
+//            captureView.setImageBitmap(tempBitmap);
+//        }
+//
+//        return hitPersons.size() > 0;
     }
 
     /**
