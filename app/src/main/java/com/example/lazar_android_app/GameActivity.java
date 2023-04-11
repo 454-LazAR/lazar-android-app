@@ -22,11 +22,14 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
+import androidx.camera.core.CameraControl;
+import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
+import androidx.camera.core.ZoomState;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
@@ -150,8 +153,19 @@ public class GameActivity extends AppCompatActivity {
         final ImageCapture imageCapture = builder
                 .setTargetRotation(this.getWindowManager().getDefaultDisplay().getRotation())
                 .build();
+
+
         preview.setSurfaceProvider(mPreviewView.createSurfaceProvider());
         camera = cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview, imageAnalysis, imageCapture);
+
+        // add zoom option to camera
+        CameraControl cameraControl = camera.getCameraControl();
+        CameraInfo cameraInfo = camera.getCameraInfo();
+        float zoomRatio = 2.0f; // set the zoom ratio, you can change it to any other value you want
+//        ZoomState zoomState = new ZoomState();
+//        zoomState.setValue(zoomRatio);
+//        cameraControl.setZoomRatio(zoomState, ContextCompat.getMainExecutor(this));
+        cameraControl.setZoomRatio(zoomRatio);
 
         // initialize object detector
         objectDetector = new ObjectDetectorHelper(
