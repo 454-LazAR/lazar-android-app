@@ -79,7 +79,6 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private double _longitude;
     private double _latitude;
     private float _bearing;
-    private SensorManager sensorManager;
     private SensorManager compassSensorManager;
     private ObjectDetectorHelper objectDetector;
     private float minConfidence = (float) 0.6;
@@ -91,12 +90,10 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         public void onLocationChanged(Location location) {
             _latitude = location.getLatitude();
             _longitude = location.getLongitude();
-            //_bearing = location.getBearing();
 
             if (DEBUG) {
                 latView.setText("Latitude: " + _latitude);
                 longView.setText("Longitude: " + _longitude);
-                //bearView.setText("Bearing: " + _bearing);
             }
         }
     };
@@ -154,7 +151,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         longView = findViewById(R.id.longView);
         bearView = findViewById(R.id.bearView);
 
-        // setup sensor and its listener
+        // set up sensor and its listener
         compassSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         compassSensorManager.registerListener(this,
                 compassSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),
@@ -358,7 +355,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
             zoomButton.setText("UNZOOM");
         }
         else {
-            cameraControl.setZoomRatio((float)1.0);
+            cameraControl.setZoomRatio(1.0f);
             ZOOMED = false;
             zoomButton.setText("ZOOM");
         }
