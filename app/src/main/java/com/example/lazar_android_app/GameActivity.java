@@ -22,6 +22,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -70,6 +71,7 @@ public class GameActivity extends AppCompatActivity {
     private int _health;
     private double _longitude;
     private double _latitude;
+    private float _bearing;
     private ObjectDetectorHelper objectDetector;
     private float minConfidence = (float) 0.6;
     // LocationManager and LocationListener work together to provide continuous async updates
@@ -77,8 +79,15 @@ public class GameActivity extends AppCompatActivity {
     private final LocationListener locationListener = new LocationListener() {
         @Override
         public void onLocationChanged(Location location) {
-            _longitude = location.getLongitude();
             _latitude = location.getLatitude();
+            _longitude = location.getLongitude();
+            _bearing = location.getBearing();
+
+            if (DEBUG) {
+                latView.setText("Latitude: " + _latitude);
+                longView.setText("Longitude: " + _longitude);
+                bearView.setText("Bearing: " + _bearing);
+            }
         }
     };
     private Executor executor = Executors.newSingleThreadExecutor();
@@ -87,9 +96,12 @@ public class GameActivity extends AppCompatActivity {
     private Handler gameHandler;
     private Runnable gameRunnable;
     Camera camera;
-    PreviewView mPreviewView;
     ProgressBar healthBar;
     Button fireButton;
+    PreviewView mPreviewView;
+    TextView latView;
+    TextView longView;
+    TextView bearView;
 
     /**
      * During the create function, we boot up the layout and scale & set the health bar to 100.
@@ -113,15 +125,18 @@ public class GameActivity extends AppCompatActivity {
 
         if (DEBUG) {
             // makes the capture ImageView visible
-            findViewById(R.id.capture).setVisibility(View.VISIBLE);
+            findViewById(R.id.debugData).setVisibility(View.VISIBLE);
         }
 
         mPreviewView = findViewById(R.id.camera);
         healthBar = findViewById(R.id.healthBar);
-        fireButton = findViewById(R.id.fireButton);
-        fireButton.setBackgroundColor(Color.RED);
         healthBar.setProgress(100);
         healthBar.setScaleY(8f);
+        fireButton = findViewById(R.id.fireButton);
+        fireButton.setBackgroundColor(Color.RED);
+        latView = findViewById(R.id.latView);
+        longView = findViewById(R.id.longView);
+        bearView = findViewById(R.id.bearView);
 
         if (allPermissionsGranted()) {
             // Initialize the camera
@@ -129,8 +144,8 @@ public class GameActivity extends AppCompatActivity {
 
             // Get all possible location updates
             lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0, locationListener);
-            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, locationListener);
+            //lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
@@ -287,6 +302,17 @@ public class GameActivity extends AppCompatActivity {
         int imageOrientation = mPreviewView.getDeviceRotationForRemoteDisplayMode();
         if (DetectPerson(captureBmp, imageOrientation)) {
             fireButton.setBackgroundColor(Color.GREEN);
+            JSONObject body = new JSONObject();
+            try {
+                body.put("playerId", _userId);
+                body.put("timestamp", java.time.Instant.now());
+                body.put("latitude", _latitude);
+                body.put("longitude", _longitude);
+                body.put("heading", (double)_bearing);
+                new RequestTask().execute("http://143.244.200.36:8080/check-hit", body.toString());
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
         }
         else {
             fireButton.setBackgroundColor(Color.RED);
@@ -411,6 +437,14 @@ public class GameActivity extends AppCompatActivity {
                     req.addHeader("content-type", "application/json");
                     req.setEntity(params);
                     response = httpclient.execute(req);
+                } else if (_uri.equals("http://143.244.200.36:8080/check-hit")) {
+                    // TODO: REFACTOR THIS!!
+                    // Build a POST request with a JSON body
+                    HttpPost req = new HttpPost(_uri);
+                    StringEntity params = new StringEntity(_body);
+                    req.addHeader("content-type", "application/json");
+                    req.setEntity(params);
+                    response = httpclient.execute(req);
                 }
 
                 StatusLine statusLine = response.getStatusLine();
@@ -456,6 +490,10 @@ public class GameActivity extends AppCompatActivity {
                     throw new RuntimeException(e);
                 }
                 healthBar.setProgress(_health);
+            } else if (_uri.equals("http://143.244.200.36:8080/check-hit")) {
+                if (Boolean.valueOf(result)) {
+                    fireButton.setBackgroundColor(Color.MAGENTA);
+                }
             }
         }
     }
