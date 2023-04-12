@@ -104,7 +104,7 @@ public class StartActivity extends AppCompatActivity {
                     throw new RuntimeException(e);
                 }
 
-                lobbyHandler.postDelayed(this, 1000); // Schedule the task to run again after 1 second
+                lobbyHandler.postDelayed(this, 500); // Schedule the task to run again after 1 second
             }
         };
 

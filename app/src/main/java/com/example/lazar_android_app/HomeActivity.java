@@ -90,15 +90,14 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     public void joinGame(View view) {
+        Button btn = findViewById(R.id.joinButton);
         if (!DEBUG) {
-            Button btn = findViewById(R.id.joinButton);
             LinearLayout codeLayout = findViewById(R.id.joinCodeLayout);
             btn.setVisibility(View.GONE);
             codeLayout.setVisibility(View.VISIBLE);
         }
         else {
             // DEBUG MODE ACTIONS
-            Button btn = findViewById(R.id.joinButton);
             btn.setText("CLICKED!");
         }
     }
@@ -128,10 +127,10 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
-    public void openGame(View view){
-        Intent startGame = new Intent(getApplicationContext(), GameActivity.class);
-        startActivity(startGame);
-    }
+//    public void openGame(View view){
+//        Intent startGame = new Intent(getApplicationContext(), GameActivity.class);
+//        startActivity(startGame);
+//    }
 
     private class RequestTask extends AsyncTask<String, String, String> {
         private String _uri = null;

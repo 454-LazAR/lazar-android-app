@@ -72,6 +72,7 @@ public class GameActivity extends AppCompatActivity {
     private double _latitude;
     private ObjectDetectorHelper objectDetector;
     private float minConfidence = (float) 0.6;
+    // LocationManager and LocationListener work together to provide continuous async updates
     LocationManager lm;
     private final LocationListener locationListener = new LocationListener() {
         @Override
@@ -92,10 +93,14 @@ public class GameActivity extends AppCompatActivity {
 
     /**
      * During the create function, we boot up the layout and scale & set the health bar to 100.
-     * Next, permission to use the camera is asked to the user.
+     * Next, permission to use the camera and location services is asked to the user.
      *
-     * @param savedInstanceState
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
      */
+    // Permission check is performed in allPermissionGranted() but not directly in onCreate(), so
+    // Java thinks we're not doing a permission check and gets scared. This suppression fixes that.
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,10 +124,11 @@ public class GameActivity extends AppCompatActivity {
         healthBar.setScaleY(8f);
 
         if (allPermissionsGranted()) {
+            // Initialize the camera
             startCamera();
-            lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
             // Get all possible location updates
+            lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0, locationListener);
             lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, locationListener);
         } else {
@@ -168,16 +174,6 @@ public class GameActivity extends AppCompatActivity {
         gameHandler.removeCallbacks(gameRunnable);
     }
 
-    private void getLat() {
-        @SuppressLint("MissingPermission") Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        _latitude = location.getLongitude();
-    }
-
-    private void getLong() {
-        @SuppressLint("MissingPermission") Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        _longitude = location.getLongitude();
-    }
-
     /**
      * This function starts the camera view after permissions have been granted.
      */
@@ -204,7 +200,7 @@ public class GameActivity extends AppCompatActivity {
     /**
      * Binds the ProcessCameraProvider object to a view, so it can be displayed on the UI.
      *
-     * @param cameraProvider passed during startCamera()
+     * @param cameraProvider passed from startCamera()
      */
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
 
@@ -300,11 +296,11 @@ public class GameActivity extends AppCompatActivity {
     }
 
     /**
-     * Given a Bitmap, this function uses the ObjectDetectorHelper class to determine if a person is
-     * in the image, and if that person is within the crosshairs in the app (aka: the center X and Y
-     * coordinates of the image). If both conditions are true, returns true to indicate a person has
-     * been hit!
-     *
+     * Given a Bitmap, this function uses the {@link ObjectDetectorHelper} to determine if a person
+     * is in the image, and if that person is within the crosshairs in the app (aka: the center X
+     * and Y coordinates of the image). If both conditions are true, returns true to indicate a
+     * person has been hit!
+     * <br><br>
      * In DEBUG mode, draws GREEN bounding boxes around people detected who have score greater than
      * minConfidence and overlap their bounding boxes with the center of the image (the crosshair).
      * Draws RED bounding boxes around people detected who don't meet at least one of those
