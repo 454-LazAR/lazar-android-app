@@ -1,5 +1,6 @@
 package com.example.lazar_android_app;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -10,6 +11,7 @@ import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -62,17 +64,25 @@ public class GameActivity extends AppCompatActivity {
 
 
     private boolean DEBUG = true;
+
     private String _userId;
     private String _gameStatus;
     private int _health;
-
-    private float minConfidence = (float) 0.6;
-
+    private double _longitude;
+    private double _latitude;
     private ObjectDetectorHelper objectDetector;
-
+    private float minConfidence = (float) 0.6;
+    LocationManager lm;
+    private final LocationListener locationListener = new LocationListener() {
+        @Override
+        public void onLocationChanged(Location location) {
+            _longitude = location.getLongitude();
+            _latitude = location.getLatitude();
+        }
+    };
     private Executor executor = Executors.newSingleThreadExecutor();
-    private int REQUEST_CODE_PERMISSIONS = 1001;
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
+    private int REQUEST_CODE_PERMISSIONS = 1001;
     private Handler gameHandler;
     private Runnable gameRunnable;
     Camera camera;
@@ -86,6 +96,7 @@ public class GameActivity extends AppCompatActivity {
      *
      * @param savedInstanceState
      */
+    @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -109,6 +120,11 @@ public class GameActivity extends AppCompatActivity {
 
         if (allPermissionsGranted()) {
             startCamera();
+            lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+            // Get all possible location updates
+            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0, locationListener);
+            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, locationListener);
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
@@ -122,8 +138,8 @@ public class GameActivity extends AppCompatActivity {
                 JSONObject body = new JSONObject();
                 try {
                     body.put("playerId", _userId);
-                    body.put("latitude", getLat());
-                    body.put("longitude", getLong());
+                    body.put("latitude", _latitude);
+                    body.put("longitude", _longitude);
                     body.put("timestamp", java.time.Instant.now());
                     new RequestTask().execute("http://143.244.200.36:8080/game-ping", body.toString());
                 } catch (JSONException e) {
@@ -152,14 +168,14 @@ public class GameActivity extends AppCompatActivity {
         gameHandler.removeCallbacks(gameRunnable);
     }
 
-    private double getLat() {
-        // TODO: yeah
-        return 0.0;
+    private void getLat() {
+        @SuppressLint("MissingPermission") Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        _latitude = location.getLongitude();
     }
 
-    private double getLong() {
-        // TODO: yeah
-        return 0.0;
+    private void getLong() {
+        @SuppressLint("MissingPermission") Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        _longitude = location.getLongitude();
     }
 
     /**
