@@ -10,6 +10,10 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -61,7 +65,7 @@ import java.util.concurrent.Executors;
 
 import kotlin.Pair;
 
-public class GameActivity extends AppCompatActivity {
+public class GameActivity extends AppCompatActivity implements SensorEventListener {
 
 
     private boolean DEBUG = true;
@@ -72,6 +76,8 @@ public class GameActivity extends AppCompatActivity {
     private double _longitude;
     private double _latitude;
     private float _bearing;
+    private SensorManager sensorManager;
+    private SensorManager compassSensorManager;
     private ObjectDetectorHelper objectDetector;
     private float minConfidence = (float) 0.6;
     // LocationManager and LocationListener work together to provide continuous async updates
@@ -81,15 +87,16 @@ public class GameActivity extends AppCompatActivity {
         public void onLocationChanged(Location location) {
             _latitude = location.getLatitude();
             _longitude = location.getLongitude();
-            _bearing = location.getBearing();
+            //_bearing = location.getBearing();
 
             if (DEBUG) {
                 latView.setText("Latitude: " + _latitude);
                 longView.setText("Longitude: " + _longitude);
-                bearView.setText("Bearing: " + _bearing);
+                //bearView.setText("Bearing: " + _bearing);
             }
         }
     };
+
     private Executor executor = Executors.newSingleThreadExecutor();
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
     private int REQUEST_CODE_PERMISSIONS = 1001;
@@ -128,6 +135,7 @@ public class GameActivity extends AppCompatActivity {
             findViewById(R.id.debugData).setVisibility(View.VISIBLE);
         }
 
+        // set up view
         mPreviewView = findViewById(R.id.camera);
         healthBar = findViewById(R.id.healthBar);
         healthBar.setProgress(100);
@@ -138,14 +146,21 @@ public class GameActivity extends AppCompatActivity {
         longView = findViewById(R.id.longView);
         bearView = findViewById(R.id.bearView);
 
+        // setup sensor and its listener
+        compassSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        compassSensorManager.registerListener(this,
+                compassSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),
+                SensorManager.SENSOR_DELAY_NORMAL);
+
+
         if (allPermissionsGranted()) {
             // Initialize the camera
             startCamera();
 
             // Get all possible location updates
             lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            //lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
-            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2, 0, locationListener);
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
@@ -414,6 +429,19 @@ public class GameActivity extends AppCompatActivity {
 
         // at least one of the conditions isn't true, so it's not within the boundary box
         return false;
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_ORIENTATION){
+            _bearing = sensorEvent.values[0];
+            bearView.setText("Bearing: " + _bearing);
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
+        // who cares?
     }
 
     private class RequestTask extends AsyncTask<String, String, String> {
