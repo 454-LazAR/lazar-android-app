@@ -10,6 +10,10 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -22,6 +26,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -63,7 +68,7 @@ import java.util.concurrent.Executors;
 
 import kotlin.Pair;
 
-public class GameActivity extends AppCompatActivity {
+public class GameActivity extends AppCompatActivity implements SensorEventListener {
 
 
     private boolean DEBUG = true;
@@ -73,6 +78,9 @@ public class GameActivity extends AppCompatActivity {
     private int _health;
     private double _longitude;
     private double _latitude;
+    private float _bearing;
+    private SensorManager sensorManager;
+    private SensorManager compassSensorManager;
     private ObjectDetectorHelper objectDetector;
     private float minConfidence = (float) 0.6;
     private float zoomRatio = 4.0f;
@@ -81,10 +89,18 @@ public class GameActivity extends AppCompatActivity {
     private final LocationListener locationListener = new LocationListener() {
         @Override
         public void onLocationChanged(Location location) {
-            _longitude = location.getLongitude();
             _latitude = location.getLatitude();
+            _longitude = location.getLongitude();
+            //_bearing = location.getBearing();
+
+            if (DEBUG) {
+                latView.setText("Latitude: " + _latitude);
+                longView.setText("Longitude: " + _longitude);
+                //bearView.setText("Bearing: " + _bearing);
+            }
         }
     };
+
     private Executor executor = Executors.newSingleThreadExecutor();
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
     private int REQUEST_CODE_PERMISSIONS = 1001;
@@ -96,6 +112,9 @@ public class GameActivity extends AppCompatActivity {
     ProgressBar healthBar;
     Button fireButton;
     Button zoomButton;
+    TextView latView;
+    TextView longView;
+    TextView bearView;
 
     /**
      * During the create function, we boot up the layout and scale & set the health bar to 100.
@@ -119,17 +138,28 @@ public class GameActivity extends AppCompatActivity {
 
         if (DEBUG) {
             // makes the capture ImageView visible
-            findViewById(R.id.capture).setVisibility(View.VISIBLE);
+            findViewById(R.id.debugData).setVisibility(View.VISIBLE);
         }
 
+        // set up view
         mPreviewView = findViewById(R.id.camera);
         healthBar = findViewById(R.id.healthBar);
+        healthBar.setProgress(100);
+        healthBar.setScaleY(8f);
         fireButton = findViewById(R.id.fireButton);
         zoomButton = findViewById(R.id.zoomButton);
         zoomButton.setBackgroundColor(Color.BLUE);
         fireButton.setBackgroundColor(Color.RED);
-        healthBar.setProgress(100);
-        healthBar.setScaleY(8f);
+        latView = findViewById(R.id.latView);
+        longView = findViewById(R.id.longView);
+        bearView = findViewById(R.id.bearView);
+
+        // setup sensor and its listener
+        compassSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        compassSensorManager.registerListener(this,
+                compassSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),
+                SensorManager.SENSOR_DELAY_NORMAL);
+
 
         if (allPermissionsGranted()) {
             // Initialize the camera
@@ -137,8 +167,8 @@ public class GameActivity extends AppCompatActivity {
 
             // Get all possible location updates
             lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0, locationListener);
-            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, locationListener);
+            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2, 0, locationListener);
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
@@ -298,12 +328,21 @@ public class GameActivity extends AppCompatActivity {
         int imageOrientation = mPreviewView.getDeviceRotationForRemoteDisplayMode();
         if (DetectPerson(captureBmp, imageOrientation)) {
             fireButton.setBackgroundColor(Color.GREEN);
+            JSONObject body = new JSONObject();
+            try {
+                body.put("playerId", _userId);
+                body.put("timestamp", java.time.Instant.now());
+                body.put("latitude", _latitude);
+                body.put("longitude", _longitude);
+                body.put("heading", (double)_bearing);
+                new RequestTask().execute("http://143.244.200.36:8080/check-hit", body.toString());
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
         }
         else {
             fireButton.setBackgroundColor(Color.RED);
         }
-
-        healthBar.setProgress(healthBar.getProgress() - 10);
     }
 
     /**
@@ -422,6 +461,19 @@ public class GameActivity extends AppCompatActivity {
         return false;
     }
 
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_ORIENTATION){
+            _bearing = sensorEvent.values[0];
+            bearView.setText("Bearing: " + _bearing);
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
+        // who cares?
+    }
+
     private class RequestTask extends AsyncTask<String, String, String> {
         private String _uri = null;
         private String _body = null;
@@ -437,6 +489,14 @@ public class GameActivity extends AppCompatActivity {
             String responseString = null;
             try {
                 if (_uri.equals("http://143.244.200.36:8080/game-ping")) {
+                    // Build a POST request with a JSON body
+                    HttpPost req = new HttpPost(_uri);
+                    StringEntity params = new StringEntity(_body);
+                    req.addHeader("content-type", "application/json");
+                    req.setEntity(params);
+                    response = httpclient.execute(req);
+                } else if (_uri.equals("http://143.244.200.36:8080/check-hit")) {
+                    // TODO: REFACTOR THIS!!
                     // Build a POST request with a JSON body
                     HttpPost req = new HttpPost(_uri);
                     StringEntity params = new StringEntity(_body);
@@ -488,6 +548,10 @@ public class GameActivity extends AppCompatActivity {
                     throw new RuntimeException(e);
                 }
                 healthBar.setProgress(_health);
+            } else if (_uri.equals("http://143.244.200.36:8080/check-hit")) {
+                if (Boolean.valueOf(result)) {
+                    fireButton.setBackgroundColor(Color.MAGENTA);
+                }
             }
         }
     }

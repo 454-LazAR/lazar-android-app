@@ -62,14 +62,32 @@
         android:textSize="60dp"
         android:onClick="zoomInCamera"
         android:textColor="@color/black"
-        app:layout_constraintBottom_toTopOf="@id/capture"/>
+        app:layout_constraintBottom_toTopOf="@id/debugData"/>
 
-    <ImageView
-        android:id="@+id/capture"
+    <LinearLayout
+        android:id="@+id/debugData"
         android:layout_width="match_parent"
         android:layout_height="200dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:orientation="vertical">
+        <ImageView
+            android:id="@+id/capture"
+            android:layout_width="match_parent"
+            android:layout_height="140dp" />
+        <TextView
+            android:id="@+id/latView"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"/>
+        <TextView
+            android:id="@+id/longView"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"/>
+        <TextView
+            android:id="@+id/bearView"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"/>
+    </LinearLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
