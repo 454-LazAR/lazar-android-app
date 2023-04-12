@@ -2,6 +2,7 @@ package com.example.lazar_android_app;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -20,25 +21,19 @@ import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.C
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.HttpClient;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpGet;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpPost;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.utils.URIBuilder;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.entity.StringEntity;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.impl.client.DefaultHttpClient;
 
-import org.apache.http.params.HttpParams;
-import org.checkerframework.checker.units.qual.A;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.sql.Array;
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class StartActivity extends AppCompatActivity {
-
     private boolean hosting;
     ArrayList<String> usernames;
     ArrayAdapter<String> adapter;
@@ -61,7 +56,7 @@ public class StartActivity extends AppCompatActivity {
         // update room roster
         roster = findViewById(R.id.roster);
         usernames = new ArrayList<>();
-        adapter = new ArrayAdapter<String>(this,
+        adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1,
                 usernames);
         roster.setAdapter(adapter);
@@ -78,7 +73,7 @@ public class StartActivity extends AppCompatActivity {
         // update room roster
         roster = findViewById(R.id.roster);
         usernames = new ArrayList<>();
-        adapter = new ArrayAdapter<String>(this,
+        adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1,
                 usernames);
         roster.setAdapter(adapter);
@@ -109,7 +104,7 @@ public class StartActivity extends AppCompatActivity {
                     throw new RuntimeException(e);
                 }
 
-                lobbyHandler.postDelayed(this, 2000); // Schedule the task to run again after 1 second
+                lobbyHandler.postDelayed(this, 1000); // Schedule the task to run again after 1 second
             }
         };
 
@@ -146,10 +141,9 @@ public class StartActivity extends AppCompatActivity {
     }
 
     private void startAsHost() {
+        // Set room code at top
         TextView roomCodeView = findViewById(R.id.roomCode);
         roomCodeView.setText(_roomCode);
-
-        // SHOW "START" BUTTON but disable it (enables when usernames.count > 0)
 
         // Begin pinging lobby
         startLobbyPing();
@@ -213,6 +207,40 @@ public class StartActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * OnClick handler for the host's start button
+     *
+     * @param view
+     */
+    public void hostTryStart(View view) {
+        JSONObject body = new JSONObject();
+        try {
+            body.put("playerId", _userId);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+        new RequestTask().execute("http://143.244.200.36:8080/start", body.toString());
+    }
+
+    /**
+     * Hosts and non-hosts can run this method to switch over from the lobby to the in progress game
+     * activity.
+     *
+     * Passes the following info to GameActivity:
+     * - userId
+     */
+    private void startGame() {
+        // Stop the running threads!! We're starting a GAME bestie LET'S GOOOOOOO
+        stopConnTask();
+        stopLobbyPing();
+
+        // Put extras to transfer data to GameActivity, then start the game activity
+        Intent startGame = new Intent(getApplicationContext(), GameActivity.class);
+        startGame.putExtra("userId", _userId);
+        startActivity(startGame);
+    }
+
     private class RequestTask extends AsyncTask<String, String, String> {
         private String _uri = null;
         private String _body = null;
@@ -231,24 +259,11 @@ public class StartActivity extends AppCompatActivity {
                     // Build a param-less GET request
                     HttpGet req = new HttpGet(_uri);
                     response = httpclient.execute(req);
-                }
-                else if (_uri.equals("http://143.244.200.36:8080/create")) {
-                    // Build the POST request with a JSON body
-                    HttpPost req = new HttpPost(_uri);
-                    StringEntity params = new StringEntity(_body);
-                    req.addHeader("content-type", "application/json");
-                    req.setEntity(params);
-                    response = httpclient.execute(req);
-                }
-                else if (_uri.equals("http://143.244.200.36:8080/lobby-ping")) {
-                    // Build the GET request with params
-                    HttpPost req = new HttpPost(_uri);
-                    StringEntity params = new StringEntity(_body);
-                    req.addHeader("content-type", "application/json");
-                    req.setEntity(params);
-                    response = httpclient.execute(req);
-                }
-                else if (_uri.equals("http://143.244.200.36:8080/join")) {
+                } else if (_uri.equals("http://143.244.200.36:8080/create") ||
+                        _uri.equals("http://143.244.200.36:8080/lobby-ping") ||
+                        _uri.equals("http://143.244.200.36:8080/join") ||
+                        _uri.equals("http://143.244.200.36:8080/start")) {
+                    // Build a POST request with a JSON body
                     HttpPost req = new HttpPost(_uri);
                     StringEntity params = new StringEntity(_body);
                     req.addHeader("content-type", "application/json");
@@ -257,13 +272,12 @@ public class StartActivity extends AppCompatActivity {
                 }
 
                 StatusLine statusLine = response.getStatusLine();
-                if(statusLine.getStatusCode() == HttpStatus.SC_OK){
+                if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
                     response.getEntity().writeTo(out);
                     responseString = out.toString();
                     out.close();
-                }
-                else{
+                } else {
                     //Closes the connection.
                     response.getEntity().getContent().close();
                     throw new IOException(statusLine.getReasonPhrase());
@@ -293,14 +307,12 @@ public class StartActivity extends AppCompatActivity {
 
             // Switch based on executed API call
             if (result == null) {
-                // fail to connect to server
+                // fail to connect to server or non-200 status code received
                 setConnected(false);
-            }
-            else if (result.equals("Hello world!")) {
+            } else if (result.equals("Hello world!")) {
                 // server connection success
                 setConnected(true);
-            }
-            else if (_uri.equals("http://143.244.200.36:8080/create")) {
+            } else if (_uri.equals("http://143.244.200.36:8080/create")) {
                 // Parse result into user UUID and generated room code
                 try {
                     _userId = json.getString("id");
@@ -309,8 +321,7 @@ public class StartActivity extends AppCompatActivity {
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
-            }
-            else if (_uri.equals("http://143.244.200.36:8080/lobby-ping")) {
+            } else if (_uri.equals("http://143.244.200.36:8080/lobby-ping")) {
                 // Parse result into game status and usernames and update the "usernames" ArrayList
                 // (automatically updates the ListView)
                 try {
@@ -318,20 +329,36 @@ public class StartActivity extends AppCompatActivity {
                     JSONArray usernameArr = json.getJSONArray("usernames");
                     ArrayList<String> new_usernames = new ArrayList<>();
                     //Iterating JSON array
-                    for (int i=0; i<usernameArr.length(); ++i){
+                    for (int i = 0; i < usernameArr.length(); ++i) {
                         // Adding each element of JSON array into ArrayList
-                        new_usernames.add((String)usernameArr.get(i));
+                        new_usernames.add((String) usernameArr.get(i));
                     }
-                    // update "usernames" ArrayList
+
+                    // update "usernames" ArrayList and refresh roster
                     usernames = new_usernames;
+                    Collections.sort(usernames);
                     adapter.clear();
                     adapter.addAll(usernames);
                     adapter.notifyDataSetChanged();
+
+                    // reveal start button for host if at least 2 players in lobby, else vanish it
+                    if (hosting) {
+                        Button startButton = findViewById(R.id.startButton);
+                        startButton.setVisibility(usernames.size() > 1 ? View.VISIBLE : View.GONE);
+                    }
                 } catch (JSONException e) {
-                    throw new RuntimeException(e);
+                    // server returned different data set, likely since lobby status has changed
                 }
-            }
-            else if (_uri.equals("http://143.244.200.36:8080/join")) {
+
+                // regardless of if the roster updated, CHECK IF THE GAME STARTED AND REACT
+
+                // Check if host has started game! If so, start game!
+                if (_gameStatus.equals("IN_PROGRESS")) {
+                    startGame();
+                } else if (_gameStatus.equals("ABANDONED")) {
+                    // TODO: do something else! (Go back to lobby and show toast "Game abandoned" ?)
+                }
+            } else if (_uri.equals("http://143.244.200.36:8080/join")) {
                 // Parse result into user UUID and generated room code
                 try {
                     _userId = json.getString("id");
@@ -339,6 +366,12 @@ public class StartActivity extends AppCompatActivity {
                     startAsJoin();
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
+                }
+            } else if (_uri.equals("http://143.244.200.36:8080/start")) {
+                // Success: A 200 will be sent with a boolean indicating that the game was started
+                //          successfully.
+                if (Boolean.valueOf(result)) {
+                    startGame();
                 }
             }
         }
