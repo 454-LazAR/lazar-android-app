@@ -332,8 +332,6 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         else {
             fireButton.setBackgroundColor(Color.RED);
         }
-
-        healthBar.setProgress(healthBar.getProgress() - 10);
     }
 
     /**

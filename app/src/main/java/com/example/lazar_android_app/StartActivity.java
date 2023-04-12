@@ -127,9 +127,10 @@ public class StartActivity extends AppCompatActivity {
     }
 
     /**
-     * Run this to start the lobby ping thread!
+     * Run this to start the lobby ping thread! Also stops the connectivity thread.
      */
     private void startLobbyPing() {
+        stopConnTask();
         lobbyHandler.post(lobbyRunnable);
     }
 
@@ -238,6 +239,7 @@ public class StartActivity extends AppCompatActivity {
         // Put extras to transfer data to GameActivity, then start the game activity
         Intent startGame = new Intent(getApplicationContext(), GameActivity.class);
         startGame.putExtra("userId", _userId);
+        stopLobbyPing();
         startActivity(startGame);
     }
 
@@ -325,6 +327,7 @@ public class StartActivity extends AppCompatActivity {
                 // Parse result into game status and usernames and update the "usernames" ArrayList
                 // (automatically updates the ListView)
                 try {
+                    setConnected(true);
                     _gameStatus = json.getString("gameStatus");
                     JSONArray usernameArr = json.getJSONArray("usernames");
                     ArrayList<String> new_usernames = new ArrayList<>();
