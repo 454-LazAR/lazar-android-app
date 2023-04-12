@@ -52,7 +52,17 @@
         android:textSize="60dp"
         android:onClick="fireLazar"
         android:textColor="@color/black"
-        app:layout_constraintBottom_toTopOf="@id/capture" />
+        app:layout_constraintBottom_toTopOf="@id/zoomButton" />
+
+    <Button
+        android:id="@+id/zoomButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ZOOM"
+        android:textSize="60dp"
+        android:onClick="zoomInCamera"
+        android:textColor="@color/black"
+        app:layout_constraintBottom_toTopOf="@id/capture"/>
 
     <ImageView
         android:id="@+id/capture"

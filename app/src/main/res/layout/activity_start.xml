@@ -12,17 +12,11 @@
     <!-- Connection Indicator -->
     <TextView
         android:id="@+id/serverConnection"
-        android:text="Loading..."
+        android:text="Not Connected"
         android:textColor="@color/red"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|end" />
-
-    <TextView
-        android:id="@+id/lobbyBanner"
-        android:text="HOSTING"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content" />
 
     <!-- Lobby Container -->
     <LinearLayout
@@ -34,7 +28,7 @@
             android:id="@+id/roomCode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="XXXXXX"
+            android:text="Waiting..."
             android:textSize="36dp" />
         <EditText
             android:id="@+id/enterNickname"
@@ -48,11 +42,24 @@
             android:onClick="submitNickname"
             style="@style/ButtonHome"
             android:text="JOIN" />
-        <ListView
-            android:id="@+id/roster"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent" />
-
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="fill_parent">
+            <ListView
+                android:id="@+id/roster"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@+id/startButton"/>
+            <Button
+                android:id="@+id/startButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:onClick="hostTryStart"
+                style="@style/ButtonHome"
+                android:text="START GAME"
+                android:visibility="gone"/>
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
-
 </LinearLayout>
