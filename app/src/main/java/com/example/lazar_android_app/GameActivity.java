@@ -271,7 +271,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         objectDetector = new ObjectDetectorHelper(
                 0.5f,
                 2,
-                3,
+                5,
                 2,
                 0,
                 this,
@@ -544,6 +544,13 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 try {
                     _gameStatus = json.getString("gameStatus");
                     _health = json.getInt("health");
+
+                    if (_gameStatus.equals("FINISHED") && _health > 0) {
+                        // VICTORY
+                    }
+                    else if (_health <= 0) {
+                        // GAME OVER
+                    }
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
