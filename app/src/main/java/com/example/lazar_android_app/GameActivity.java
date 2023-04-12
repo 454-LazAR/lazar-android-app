@@ -8,6 +8,9 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -22,6 +25,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
+import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
@@ -51,19 +55,36 @@ public class GameActivity extends AppCompatActivity {
     public static final int OUTPUT_IMAGE_FORMAT_RGBA_8888 = 2;
 
     private boolean DEBUG = true;
-    private float minConfidence = (float) 0.6;
-
+    private boolean ZOOMED = false;
+    private String _userId;
+    private String _gameStatus;
+    private int _health;
+    private double _longitude;
+    private double _latitude;
     private ObjectDetectorHelper objectDetector;
     private ImageSegmentationHelper imageSegmentor;
-
+    private float minConfidence = (float) 0.6;
+    private float zoomRatio = 4.0f;
+    // LocationManager and LocationListener work together to provide continuous async updates
+    LocationManager lm;
+    private final LocationListener locationListener = new LocationListener() {
+        @Override
+        public void onLocationChanged(Location location) {
+            _longitude = location.getLongitude();
+            _latitude = location.getLatitude();
+        }
+    };
     private Executor executor = Executors.newSingleThreadExecutor();
-    private int REQUEST_CODE_PERMISSIONS = 1001;
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
+    private int REQUEST_CODE_PERMISSIONS = 1001;
+    private Handler gameHandler;
+    private Runnable gameRunnable;
     Camera camera;
+    CameraControl cameraControl;
     PreviewView mPreviewView;
-    ImageView crosshair;
     ProgressBar healthBar;
     Button fireButton;
+    Button zoomButton;
 
     /**
      * During the create function, we boot up the layout and scale & set the health bar to 100.
@@ -82,7 +103,6 @@ public class GameActivity extends AppCompatActivity {
         }
 
         mPreviewView = findViewById(R.id.camera);
-        crosshair = findViewById(R.id.crosshair);
         healthBar = findViewById(R.id.healthBar);
         fireButton = findViewById(R.id.fireButton);
         fireButton.setBackgroundColor(Color.RED);
