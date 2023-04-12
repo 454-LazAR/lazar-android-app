@@ -1,5 +1,7 @@
 package com.example.lazar_android_app;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -11,6 +13,7 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -26,11 +29,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
+import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
-import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
+import androidx.camera.core.ZoomState;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
@@ -38,12 +42,21 @@ import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpResponse;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpStatus;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.StatusLine;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.ClientProtocolException;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.HttpClient;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpPost;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.entity.StringEntity;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.impl.client.DefaultHttpClient;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -52,7 +65,6 @@ import kotlin.Pair;
 
 public class GameActivity extends AppCompatActivity {
 
-    public static final int OUTPUT_IMAGE_FORMAT_RGBA_8888 = 2;
 
     private boolean DEBUG = true;
     private boolean ZOOMED = false;
@@ -88,14 +100,23 @@ public class GameActivity extends AppCompatActivity {
 
     /**
      * During the create function, we boot up the layout and scale & set the health bar to 100.
-     * Next, permission to use the camera is asked to the user.
+     * Next, permission to use the camera and location services is asked to the user.
      *
-     * @param savedInstanceState
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
      */
+    // Permission check is performed in allPermissionGranted() but not directly in onCreate(), so
+    // Java thinks we're not doing a permission check and gets scared. This suppression fixes that.
+    @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game);
+
+        // Decompile extras
+        Bundle extras = getIntent().getExtras();
+        _userId = extras.getString("userId");
 
         if (DEBUG) {
             // makes the capture ImageView visible
@@ -105,21 +126,61 @@ public class GameActivity extends AppCompatActivity {
         mPreviewView = findViewById(R.id.camera);
         healthBar = findViewById(R.id.healthBar);
         fireButton = findViewById(R.id.fireButton);
+        zoomButton = findViewById(R.id.zoomButton);
+        zoomButton.setBackgroundColor(Color.BLUE);
         fireButton.setBackgroundColor(Color.RED);
-        int min = healthBar.getMin();
-        int max = healthBar.getMax();
         healthBar.setProgress(100);
         healthBar.setScaleY(8f);
 
-        // Get location of crosshair
-        //crosshairX = getResources().getDisplayMetrics().widthPixels / 2;
-        //crosshairY = getResources().getDisplayMetrics().heightPixels / 2;
-
         if (allPermissionsGranted()) {
-            startCamera(); //start camera if permission has been granted by user
+            // Initialize the camera
+            startCamera();
+
+            // Get all possible location updates
+            lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0, locationListener);
+            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, locationListener);
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
+
+        // Define async thread to run game pings
+        gameHandler = new Handler();
+        gameRunnable = new Runnable() {
+            @Override
+            public void run() {
+                // Do your background task here
+                JSONObject body = new JSONObject();
+                try {
+                    body.put("playerId", _userId);
+                    body.put("latitude", _latitude);
+                    body.put("longitude", _longitude);
+                    body.put("timestamp", java.time.Instant.now());
+                    new RequestTask().execute("http://143.244.200.36:8080/game-ping", body.toString());
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+
+                gameHandler.postDelayed(this, 1000); // Schedule the task to run again after 1 second
+            }
+        };
+
+        // Start the async game ping thread
+        startGamePing();
+    }
+
+    /**
+     * Run this to start the async game ping thread!
+     */
+    private void startGamePing() {
+        gameHandler.post(gameRunnable);
+    }
+
+    /**
+     * Run this to stop the async game ping thread!
+     */
+    private void stopGamePing() {
+        gameHandler.removeCallbacks(gameRunnable);
     }
 
     /**
@@ -148,7 +209,7 @@ public class GameActivity extends AppCompatActivity {
     /**
      * Binds the ProcessCameraProvider object to a view, so it can be displayed on the UI.
      *
-     * @param cameraProvider passed during startCamera()
+     * @param cameraProvider passed from startCamera()
      */
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
 
@@ -171,8 +232,11 @@ public class GameActivity extends AppCompatActivity {
         final ImageCapture imageCapture = builder
                 .setTargetRotation(this.getWindowManager().getDefaultDisplay().getRotation())
                 .build();
+
+
         preview.setSurfaceProvider(mPreviewView.createSurfaceProvider());
         camera = cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview, imageAnalysis, imageCapture);
+        cameraControl = camera.getCameraControl();
 
         // initialize object detector
         objectDetector = new ObjectDetectorHelper(
@@ -251,11 +315,32 @@ public class GameActivity extends AppCompatActivity {
     }
 
     /**
-     * Given a Bitmap, this function uses the ObjectDetectorHelper class to determine if a person is
-     * in the image, and if that person is within the crosshairs in the app (aka: the center X and Y
-     * coordinates of the image). If both conditions are true, returns true to indicate a person has
-     * been hit!
+     * Onclick handler for the ZOOM button.
      *
+     * @param view
+     */
+    public void zoomInCamera(View view) {
+        // zoom in OR zoom out the camera
+        if (!ZOOMED) {
+            cameraControl.setZoomRatio(zoomRatio);
+            ZOOMED = true;
+            zoomButton.setText("UNZOOM");
+        }
+        else {
+            cameraControl.setZoomRatio((float)1.0);
+            ZOOMED = false;
+            zoomButton.setText("ZOOM");
+        }
+
+
+    }
+
+    /**
+     * Given a Bitmap, this function uses the {@link ObjectDetectorHelper} to determine if a person
+     * is in the image, and if that person is within the crosshairs in the app (aka: the center X
+     * and Y coordinates of the image). If both conditions are true, returns true to indicate a
+     * person has been hit!
+     * <br><br>
      * In DEBUG mode, draws GREEN bounding boxes around people detected who have score greater than
      * minConfidence and overlap their bounding boxes with the center of the image (the crosshair).
      * Draws RED bounding boxes around people detected who don't meet at least one of those
@@ -373,5 +458,75 @@ public class GameActivity extends AppCompatActivity {
 
         // at least one of the conditions isn't true, so it's not within the boundary box
         return false;
+    }
+
+    private class RequestTask extends AsyncTask<String, String, String> {
+        private String _uri = null;
+        private String _body = null;
+        HttpResponse response;
+
+        @Override
+        protected String doInBackground(String... uri) {
+            _uri = uri[0];
+            if (uri.length == 2) {
+                _body = uri[1];
+            }
+            HttpClient httpclient = new DefaultHttpClient();
+            String responseString = null;
+            try {
+                if (_uri.equals("http://143.244.200.36:8080/game-ping")) {
+                    // Build a POST request with a JSON body
+                    HttpPost req = new HttpPost(_uri);
+                    StringEntity params = new StringEntity(_body);
+                    req.addHeader("content-type", "application/json");
+                    req.setEntity(params);
+                    response = httpclient.execute(req);
+                }
+
+                StatusLine statusLine = response.getStatusLine();
+                if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    response.getEntity().writeTo(out);
+                    responseString = out.toString();
+                    out.close();
+                } else {
+                    //Closes the connection.
+                    response.getEntity().getContent().close();
+                    throw new IOException(statusLine.getReasonPhrase());
+                }
+            } catch (ClientProtocolException e) {
+                //TODO Handle problems..
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return responseString;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            //Do anything with response...
+
+            JSONObject json = null;
+            if (result != null) {
+                try {
+                    json = new JSONObject(result);
+                } catch (JSONException e) {
+                    // don't throw anything yet
+                    // this won't be a JSON after GET /hello-world
+                }
+            }
+
+            // Switch based on executed API call
+            if (_uri.equals("http://143.244.200.36:8080/game-ping")) {
+                try {
+                    _gameStatus = json.getString("gameStatus");
+                    _health = json.getInt("health");
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+                healthBar.setProgress(_health);
+            }
+        }
     }
 }
