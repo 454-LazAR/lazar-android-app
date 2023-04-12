@@ -8,4 +8,22 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:backgroundTint">@color/dark_gray</item>
     </style>
+    <style name="TitleB">
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">64dp</item>
+        <item name="android:layout_marginBottom">16dp</item>
+        <item name="android:layout_marginHorizontal">0dp</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@color/purple_neon</item>
+    </style>
+    <style name="TitleA">
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">64dp</item>
+        <item name="android:layout_marginBottom">16dp</item>
+        <item name="android:layout_marginHorizontal">0dp</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@color/teal_700</item>
+    </style>
 </resources>

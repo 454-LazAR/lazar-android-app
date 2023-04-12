@@ -33,10 +33,13 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
+import androidx.camera.core.CameraControl;
+import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.Preview;
+import androidx.camera.core.ZoomState;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
@@ -69,7 +72,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
 
     private boolean DEBUG = true;
-
+    private boolean ZOOMED = false;
     private String _userId;
     private String _gameStatus;
     private int _health;
@@ -80,6 +83,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private SensorManager compassSensorManager;
     private ObjectDetectorHelper objectDetector;
     private float minConfidence = (float) 0.6;
+    private float zoomRatio = 4.0f;
     // LocationManager and LocationListener work together to provide continuous async updates
     LocationManager lm;
     private final LocationListener locationListener = new LocationListener() {
@@ -103,9 +107,11 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private Handler gameHandler;
     private Runnable gameRunnable;
     Camera camera;
+    CameraControl cameraControl;
+    PreviewView mPreviewView;
     ProgressBar healthBar;
     Button fireButton;
-    PreviewView mPreviewView;
+    Button zoomButton;
     TextView latView;
     TextView longView;
     TextView bearView;
@@ -141,6 +147,8 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         healthBar.setProgress(100);
         healthBar.setScaleY(8f);
         fireButton = findViewById(R.id.fireButton);
+        zoomButton = findViewById(R.id.zoomButton);
+        zoomButton.setBackgroundColor(Color.BLUE);
         fireButton.setBackgroundColor(Color.RED);
         latView = findViewById(R.id.latView);
         longView = findViewById(R.id.longView);
@@ -253,8 +261,11 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         final ImageCapture imageCapture = builder
                 .setTargetRotation(this.getWindowManager().getDefaultDisplay().getRotation())
                 .build();
+
+
         preview.setSurfaceProvider(mPreviewView.createSurfaceProvider());
         camera = cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview, imageAnalysis, imageCapture);
+        cameraControl = camera.getCameraControl();
 
         // initialize object detector
         objectDetector = new ObjectDetectorHelper(
@@ -332,6 +343,27 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         else {
             fireButton.setBackgroundColor(Color.RED);
         }
+    }
+
+    /**
+     * Onclick handler for the ZOOM button.
+     *
+     * @param view
+     */
+    public void zoomInCamera(View view) {
+        // zoom in OR zoom out the camera
+        if (!ZOOMED) {
+            cameraControl.setZoomRatio(zoomRatio);
+            ZOOMED = true;
+            zoomButton.setText("UNZOOM");
+        }
+        else {
+            cameraControl.setZoomRatio((float)1.0);
+            ZOOMED = false;
+            zoomButton.setText("ZOOM");
+        }
+
+
     }
 
     /**
