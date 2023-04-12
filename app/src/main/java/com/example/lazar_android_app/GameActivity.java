@@ -1,5 +1,6 @@
 package com.example.lazar_android_app;
 
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -8,6 +9,9 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.location.Location;
+import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -25,7 +29,6 @@ import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
-import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
@@ -34,12 +37,21 @@ import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpResponse;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpStatus;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.StatusLine;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.ClientProtocolException;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.HttpClient;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpPost;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.entity.StringEntity;
+import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.impl.client.DefaultHttpClient;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -48,9 +60,12 @@ import kotlin.Pair;
 
 public class GameActivity extends AppCompatActivity {
 
-    public static final int OUTPUT_IMAGE_FORMAT_RGBA_8888 = 2;
 
     private boolean DEBUG = true;
+    private String _userId;
+    private String _gameStatus;
+    private int _health;
+
     private float minConfidence = (float) 0.6;
 
     private ObjectDetectorHelper objectDetector;
@@ -58,9 +73,10 @@ public class GameActivity extends AppCompatActivity {
     private Executor executor = Executors.newSingleThreadExecutor();
     private int REQUEST_CODE_PERMISSIONS = 1001;
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
+    private Handler gameHandler;
+    private Runnable gameRunnable;
     Camera camera;
     PreviewView mPreviewView;
-    ImageView crosshair;
     ProgressBar healthBar;
     Button fireButton;
 
@@ -75,30 +91,75 @@ public class GameActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game);
 
+        // Decompile extras
+        Bundle extras = getIntent().getExtras();
+        _userId = extras.getString("userId");
+
         if (DEBUG) {
             // makes the capture ImageView visible
             findViewById(R.id.capture).setVisibility(View.VISIBLE);
         }
 
         mPreviewView = findViewById(R.id.camera);
-        crosshair = findViewById(R.id.crosshair);
         healthBar = findViewById(R.id.healthBar);
         fireButton = findViewById(R.id.fireButton);
         fireButton.setBackgroundColor(Color.RED);
-        int min = healthBar.getMin();
-        int max = healthBar.getMax();
         healthBar.setProgress(100);
         healthBar.setScaleY(8f);
 
-        // Get location of crosshair
-        //crosshairX = getResources().getDisplayMetrics().widthPixels / 2;
-        //crosshairY = getResources().getDisplayMetrics().heightPixels / 2;
-
         if (allPermissionsGranted()) {
-            startCamera(); //start camera if permission has been granted by user
+            startCamera();
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
+
+        // Define async thread to run game pings
+        gameHandler = new Handler();
+        gameRunnable = new Runnable() {
+            @Override
+            public void run() {
+                // Do your background task here
+                JSONObject body = new JSONObject();
+                try {
+                    body.put("playerId", _userId);
+                    body.put("latitude", getLat());
+                    body.put("longitude", getLong());
+                    body.put("timestamp", java.time.Instant.now());
+                    new RequestTask().execute("http://143.244.200.36:8080/game-ping", body.toString());
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+
+                gameHandler.postDelayed(this, 1000); // Schedule the task to run again after 1 second
+            }
+        };
+
+        // Start the async game ping thread
+        startGamePing();
+    }
+
+    /**
+     * Run this to start the async game ping thread!
+     */
+    private void startGamePing() {
+        gameHandler.post(gameRunnable);
+    }
+
+    /**
+     * Run this to stop the async game ping thread!
+     */
+    private void stopGamePing() {
+        gameHandler.removeCallbacks(gameRunnable);
+    }
+
+    private double getLat() {
+        // TODO: yeah
+        return 0.0;
+    }
+
+    private double getLong() {
+        // TODO: yeah
+        return 0.0;
     }
 
     /**
@@ -315,5 +376,75 @@ public class GameActivity extends AppCompatActivity {
 
         // at least one of the conditions isn't true, so it's not within the boundary box
         return false;
+    }
+
+    private class RequestTask extends AsyncTask<String, String, String> {
+        private String _uri = null;
+        private String _body = null;
+        HttpResponse response;
+
+        @Override
+        protected String doInBackground(String... uri) {
+            _uri = uri[0];
+            if (uri.length == 2) {
+                _body = uri[1];
+            }
+            HttpClient httpclient = new DefaultHttpClient();
+            String responseString = null;
+            try {
+                if (_uri.equals("http://143.244.200.36:8080/game-ping")) {
+                    // Build a POST request with a JSON body
+                    HttpPost req = new HttpPost(_uri);
+                    StringEntity params = new StringEntity(_body);
+                    req.addHeader("content-type", "application/json");
+                    req.setEntity(params);
+                    response = httpclient.execute(req);
+                }
+
+                StatusLine statusLine = response.getStatusLine();
+                if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    response.getEntity().writeTo(out);
+                    responseString = out.toString();
+                    out.close();
+                } else {
+                    //Closes the connection.
+                    response.getEntity().getContent().close();
+                    throw new IOException(statusLine.getReasonPhrase());
+                }
+            } catch (ClientProtocolException e) {
+                //TODO Handle problems..
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return responseString;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            //Do anything with response...
+
+            JSONObject json = null;
+            if (result != null) {
+                try {
+                    json = new JSONObject(result);
+                } catch (JSONException e) {
+                    // don't throw anything yet
+                    // this won't be a JSON after GET /hello-world
+                }
+            }
+
+            // Switch based on executed API call
+            if (_uri.equals("http://143.244.200.36:8080/game-ping")) {
+                try {
+                    _gameStatus = json.getString("gameStatus");
+                    _health = json.getInt("health");
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+                healthBar.setProgress(_health);
+            }
+        }
     }
 }
