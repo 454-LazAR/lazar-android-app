@@ -1,5 +1,6 @@
 package com.example.lazar_android_app;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -10,6 +11,7 @@ import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -62,17 +64,26 @@ public class GameActivity extends AppCompatActivity {
 
 
     private boolean DEBUG = true;
+
     private String _userId;
     private String _gameStatus;
     private int _health;
-
-    private float minConfidence = (float) 0.6;
-
+    private double _longitude;
+    private double _latitude;
     private ObjectDetectorHelper objectDetector;
-
+    private float minConfidence = (float) 0.6;
+    // LocationManager and LocationListener work together to provide continuous async updates
+    LocationManager lm;
+    private final LocationListener locationListener = new LocationListener() {
+        @Override
+        public void onLocationChanged(Location location) {
+            _longitude = location.getLongitude();
+            _latitude = location.getLatitude();
+        }
+    };
     private Executor executor = Executors.newSingleThreadExecutor();
-    private int REQUEST_CODE_PERMISSIONS = 1001;
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
+    private int REQUEST_CODE_PERMISSIONS = 1001;
     private Handler gameHandler;
     private Runnable gameRunnable;
     Camera camera;
@@ -82,10 +93,15 @@ public class GameActivity extends AppCompatActivity {
 
     /**
      * During the create function, we boot up the layout and scale & set the health bar to 100.
-     * Next, permission to use the camera is asked to the user.
+     * Next, permission to use the camera and location services is asked to the user.
      *
-     * @param savedInstanceState
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
      */
+    // Permission check is performed in allPermissionGranted() but not directly in onCreate(), so
+    // Java thinks we're not doing a permission check and gets scared. This suppression fixes that.
+    @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -108,7 +124,13 @@ public class GameActivity extends AppCompatActivity {
         healthBar.setScaleY(8f);
 
         if (allPermissionsGranted()) {
+            // Initialize the camera
             startCamera();
+
+            // Get all possible location updates
+            lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0, locationListener);
+            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, locationListener);
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
@@ -122,8 +144,8 @@ public class GameActivity extends AppCompatActivity {
                 JSONObject body = new JSONObject();
                 try {
                     body.put("playerId", _userId);
-                    body.put("latitude", getLat());
-                    body.put("longitude", getLong());
+                    body.put("latitude", _latitude);
+                    body.put("longitude", _longitude);
                     body.put("timestamp", java.time.Instant.now());
                     new RequestTask().execute("http://143.244.200.36:8080/game-ping", body.toString());
                 } catch (JSONException e) {
@@ -152,16 +174,6 @@ public class GameActivity extends AppCompatActivity {
         gameHandler.removeCallbacks(gameRunnable);
     }
 
-    private double getLat() {
-        // TODO: yeah
-        return 0.0;
-    }
-
-    private double getLong() {
-        // TODO: yeah
-        return 0.0;
-    }
-
     /**
      * This function starts the camera view after permissions have been granted.
      */
@@ -188,7 +200,7 @@ public class GameActivity extends AppCompatActivity {
     /**
      * Binds the ProcessCameraProvider object to a view, so it can be displayed on the UI.
      *
-     * @param cameraProvider passed during startCamera()
+     * @param cameraProvider passed from startCamera()
      */
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
 
@@ -284,11 +296,11 @@ public class GameActivity extends AppCompatActivity {
     }
 
     /**
-     * Given a Bitmap, this function uses the ObjectDetectorHelper class to determine if a person is
-     * in the image, and if that person is within the crosshairs in the app (aka: the center X and Y
-     * coordinates of the image). If both conditions are true, returns true to indicate a person has
-     * been hit!
-     *
+     * Given a Bitmap, this function uses the {@link ObjectDetectorHelper} to determine if a person
+     * is in the image, and if that person is within the crosshairs in the app (aka: the center X
+     * and Y coordinates of the image). If both conditions are true, returns true to indicate a
+     * person has been hit!
+     * <br><br>
      * In DEBUG mode, draws GREEN bounding boxes around people detected who have score greater than
      * minConfidence and overlap their bounding boxes with the center of the image (the crosshair).
      * Draws RED bounding boxes around people detected who don't meet at least one of those
