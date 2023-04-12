@@ -164,8 +164,17 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
             // Get all possible location updates
             lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
-            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2, 0, locationListener);
+            lm.requestLocationUpdates(LocationManager.FUSED_PROVIDER, 2, 0, locationListener);
+            //lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2, 0, locationListener);
+
+            Location location = lm.getLastKnownLocation(LocationManager.FUSED_PROVIDER);
+            _latitude = location.getLatitude();
+            _longitude = location.getLongitude();
+
+            if (DEBUG) {
+                latView.setText("Latitude: " + _latitude);
+                longView.setText("Longitude: " + _longitude);
+            }
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
