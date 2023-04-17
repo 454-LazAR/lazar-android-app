@@ -2,6 +2,7 @@ package com.example.lazar_android_app;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -530,6 +531,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
             return responseString;
         }
 
+        @SuppressLint("ResourceType")
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
@@ -553,9 +555,11 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
                     if (_gameStatus.equals("FINISHED") && _health > 0) {
                         // VICTORY
+                        victoryScreen(findViewById(R.layout.activity_game));
                     }
                     else if (_health <= 0) {
                         // GAME OVER
+                        lossScreen(findViewById(R.layout.activity_game));
                     }
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
@@ -567,5 +571,48 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 }
             }
         }
+    }
+
+    /**
+     * This method displays the victory screen.
+     * TODO: Display stats such as damage dealt, damage taken, eliminations, etc.
+     */
+    public void victoryScreen(View view){
+        ImageView skyPopup = findViewById(R.id.skyBackground);
+        skyPopup.setVisibility(View.VISIBLE);
+
+        ImageView victoryPopup = findViewById(R.id.winScreen);
+        victoryPopup.setVisibility(View.VISIBLE);
+
+        Button exitButton = findViewById(R.id.exitButton);
+        Button fireButton = findViewById(R.id.fireButton);
+        fireButton.setVisibility(View.GONE);
+        exitButton.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * This method displays the loss screen.
+     * TODO: Display stats such as damage dealt, damage taken, eliminations, etc.
+     */
+    public void lossScreen(View view){
+        ImageView stormPopup = findViewById(R.id.stormBackground);
+        stormPopup.setVisibility(View.VISIBLE);
+
+        ImageView lossPopup = findViewById(R.id.lossScreen);
+        lossPopup.setVisibility(View.VISIBLE);
+
+        Button exitButton = findViewById(R.id.exitButton);
+        Button fireButton = findViewById(R.id.fireButton);
+        fireButton.setVisibility(View.GONE);
+        exitButton.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * This method returns the user back to the home screen.
+     */
+    public void returnHome(View view){
+        Intent homeScreen = new Intent(getApplicationContext(), HomeActivity.class);
+        finish();
+        startActivity(homeScreen);
     }
 }
