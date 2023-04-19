@@ -84,7 +84,7 @@ public class StartActivity extends AppCompatActivity {
         usernames = new ArrayList<>();
         adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1,
-                R.id.listText,
+:queue
                 usernames);
         roster.setAdapter(adapter);
 
@@ -246,7 +246,7 @@ public class StartActivity extends AppCompatActivity {
         Intent startGame = new Intent(getApplicationContext(), GameActivity.class);
         startGame.putExtra("userId", _userId);
         startActivity(startGame);
-        finish();
+        //finish();
     }
 
     private void handleAbandoned() {
