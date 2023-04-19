@@ -16,6 +16,10 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpResponse;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpStatus;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.StatusLine;
@@ -36,6 +40,14 @@ public class HomeActivity extends AppCompatActivity {
 
     private Handler connHandler;
     private Runnable connRunnable;
+    private RequestQueue queue;
+
+    private StringRequest helloWorldRequest = new StringRequest(Request.Method.GET, URL + "/hello-world",
+            response -> {
+                setConnected(true);
+            }, error -> {
+        setConnected(false);
+    });
 
     @Override
     public void onBackPressed() {
@@ -46,13 +58,15 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        queue = Volley.newRequestQueue(this);
+
         // Define async thread to run to update connection
         connHandler = new Handler();
         connRunnable = new Runnable() {
             @Override
             public void run() {
                 // Do your background task here
-                new RequestTask().execute(URL + "/hello-world");
+                queue.add(helloWorldRequest);
 
                 connHandler.postDelayed(this, 2000); // Schedule the task to run again after 2 seconds
             }
@@ -87,6 +101,7 @@ public class HomeActivity extends AppCompatActivity {
             Intent startStart = new Intent(getApplicationContext(), StartActivity.class);
             startStart.putExtra("mode", "HOST");
             stopConnTask();
+            queue.cancelAll(null);
             startActivity(startStart);
         }
         else {
@@ -118,6 +133,7 @@ public class HomeActivity extends AppCompatActivity {
         startStart.putExtra("mode", "JOIN");
         startStart.putExtra("roomCode", code);
         stopConnTask();
+        queue.cancelAll(null);
         startActivity(startStart);
     }
 
@@ -139,67 +155,4 @@ public class HomeActivity extends AppCompatActivity {
 //        startActivity(startGame);
 //    }
 
-    private class RequestTask extends AsyncTask<String, String, String> {
-        private String _uri = null;
-        private String _body = null;
-        HttpResponse response;
-
-        @Override
-        protected String doInBackground(String... uri) {
-            _uri = uri[0];
-            if (uri.length == 2) {
-                _body = uri[1];
-            }
-            HttpClient httpclient = new DefaultHttpClient();
-            String responseString = null;
-            try {
-                if (_uri.equals(URL + "/hello-world")) {
-                    HttpGet req = new HttpGet(_uri);
-                    response = httpclient.execute(req);
-                }
-                StatusLine statusLine = response.getStatusLine();
-                if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    response.getEntity().writeTo(out);
-                    responseString = out.toString();
-                    out.close();
-                } else {
-                    //Closes the connection.
-                    response.getEntity().getContent().close();
-                    throw new IOException(statusLine.getReasonPhrase());
-                }
-            } catch (ClientProtocolException e) {
-                //TODO Handle problems..
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return responseString;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-            //Do anything with response...
-
-            JSONObject json = null;
-            if (result != null) {
-                try {
-                    json = new JSONObject(result);
-                } catch (JSONException e) {
-                    // don't throw anything yet
-                    // this won't be a JSON after GET /hello-world
-                }
-            }
-
-            // Switch based on executed API call
-            if (result == null) {
-                // fail to connect to server
-                setConnected(false);
-            }
-            else if (result.equals("Hello world!")) {
-                // server connection success
-                setConnected(true);
-            }
-        }
-    }
 }

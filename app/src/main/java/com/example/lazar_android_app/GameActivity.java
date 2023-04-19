@@ -84,7 +84,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private float minConfidence = (float) 0.6;
     private float zoomRatio = 4.0f;
     
-    protected static final String URL = "http://laz-ar.duckdns.org:8080";
+    protected static final String URL = "https://laz-ar.duckdns.org:8443";
     
     // LocationManager and LocationListener work together to provide continuous async updates
     LocationManager lm;

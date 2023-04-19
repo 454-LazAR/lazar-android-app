@@ -17,6 +17,13 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpResponse;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpStatus;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.StatusLine;
@@ -49,6 +56,8 @@ public class StartActivity extends AppCompatActivity {
     private String _roomCode;
     private String _gameStatus;
 
+    private RequestQueue queue;
+
     @Override
     public void onBackPressed() {
         Toast.makeText(this, "Swiper to previous screen is disabled", Toast.LENGTH_SHORT).show();
@@ -57,6 +66,9 @@ public class StartActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        queue = Volley.newRequestQueue(this);
+
         setContentView(R.layout.activity_start);
 
         Bundle extras = getIntent().getExtras();
@@ -92,8 +104,7 @@ public class StartActivity extends AppCompatActivity {
             @Override
             public void run() {
                 // Do your background task here
-                new RequestTask().execute(URL + "/hello-world");
-
+                queue.add(helloWorldRequest);
                 connHandler.postDelayed(this, 2000); // Schedule the task to run again after 2 seconds
             }
         };
@@ -107,11 +118,10 @@ public class StartActivity extends AppCompatActivity {
                 JSONObject body = new JSONObject();
                 try {
                     body.put("playerId", _userId);
-                    new RequestTask().execute(URL + "/lobby-ping", body.toString());
+                    queue.add(getLobbyPingRequest(body));
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
-
                 lobbyHandler.postDelayed(this, 1000); // Schedule the task to run again after 1 second
             }
         };
@@ -138,6 +148,7 @@ public class StartActivity extends AppCompatActivity {
      * Run this to start the lobby ping thread! Also stops the connectivity thread.
      */
     private void startLobbyPing() {
+        stopConnTask();
         lobbyHandler.post(lobbyRunnable);
     }
 
@@ -184,8 +195,7 @@ public class StartActivity extends AppCompatActivity {
         if (hosting) {
             try {
                 body.put("username", username);
-                new RequestTask().execute(URL + "/create", body.toString());
-                startAsHost();
+                queue.add(getCreateRequest(body));
             } catch (JSONException e) {
                 throw new RuntimeException(e);
             }
@@ -194,8 +204,7 @@ public class StartActivity extends AppCompatActivity {
             try {
                 body.put("username", username);
                 body.put("gameId", _roomCode);
-                new RequestTask().execute(URL + "/join", body.toString());
-                startAsJoin();
+                queue.add(getJoinRequest(body));
             } catch (JSONException e) {
                 throw new RuntimeException(e);
             }
@@ -228,7 +237,7 @@ public class StartActivity extends AppCompatActivity {
             throw new RuntimeException(e);
         }
 
-        new RequestTask().execute(URL + "/start", body.toString());
+        queue.add(getStartRequest(body));
     }
 
     /**
@@ -240,107 +249,73 @@ public class StartActivity extends AppCompatActivity {
      */
     private void startGame() {
         // Stop the running threads!! We're starting a GAME bestie LET'S GOOOOOOO
-        stopConnTask();
         stopLobbyPing();
+        queue.cancelAll(null);
 
         // Put extras to transfer data to GameActivity, then start the game activity
         Intent startGame = new Intent(getApplicationContext(), GameActivity.class);
         startGame.putExtra("userId", _userId);
-        stopLobbyPing();
         startActivity(startGame);
     }
 
     private void handleAbandoned() {
         Toast.makeText(this, "Game was abandoned by the host.", Toast.LENGTH_SHORT).show();
+
+        stopLobbyPing();
+        queue.cancelAll(null);
+
+        Intent homeActivity = new Intent(getApplicationContext(), HomeActivity.class);
+        startActivity(homeActivity);
     }
 
-    private class RequestTask extends AsyncTask<String, String, String> {
-        private String _uri = null;
-        private String _body = null;
-        HttpResponse response;
+    private StringRequest helloWorldRequest = new StringRequest(Request.Method.GET, URL + "/hello-world",
+        response -> {
+            setConnected(true);
+        }, error -> {
+            setConnected(false);
+        });
 
-        @Override
-        protected String doInBackground(String... uri) {
-            _uri = uri[0];
-            if (uri.length == 2) {
-                _body = uri[1];
-            }
-            HttpClient httpclient = new DefaultHttpClient();
-            String responseString = null;
-            try {
-                if (_uri.equals(URL + "/hello-world")) {
-                    // Build a param-less GET request
-                    HttpGet req = new HttpGet(_uri);
-                    response = httpclient.execute(req);
-                } else if (_uri.equals(URL + "/create") ||
-                        _uri.equals(URL + "/lobby-ping") ||
-                        _uri.equals(URL + "/join") ||
-                        _uri.equals(URL + "/start")) {
-                    // Build a POST request with a JSON body
-                    HttpPost req = new HttpPost(_uri);
-                    StringEntity params = new StringEntity(_body);
-                    req.addHeader("content-type", "application/json");
-                    req.setEntity(params);
-                    response = httpclient.execute(req);
-                }
-
-                StatusLine statusLine = response.getStatusLine();
-                if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    response.getEntity().writeTo(out);
-                    responseString = out.toString();
-                    out.close();
-                } else {
-                    //Closes the connection.
-                    response.getEntity().getContent().close();
-                    throw new IOException(statusLine.getReasonPhrase());
-                }
-            } catch (ClientProtocolException e) {
-                //TODO Handle problems..
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return responseString;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-            //Do anything with response...
-
-            JSONObject json = null;
-            if (result != null) {
+    private JsonObjectRequest getJoinRequest(JSONObject requestBody) {
+        return new JsonObjectRequest(Request.Method.POST, URL + "/join", requestBody,
+            response -> {
                 try {
-                    json = new JSONObject(result);
+                    _userId = response.getString("id");
+                    _roomCode = response.getString("gameId");
+                    startAsJoin();
                 } catch (JSONException e) {
-                    // don't throw anything yet
-                    // this won't be a JSON after GET /hello-world
+                    throw new RuntimeException(e);
                 }
-            }
+            }, error -> {
 
-            // Switch based on executed API call
-            if (result == null) {
-                // fail to connect to server or non-200 status code received
-                setConnected(false);
-            } else if (result.equals("Hello world!")) {
-                // server connection success
-                setConnected(true);
-            } else if (_uri.equals(URL + "/create")) {
-                // Parse result into user UUID and generated room code
+            }
+        );
+    }
+
+    private JsonObjectRequest getCreateRequest(JSONObject requestBody) {
+        return new JsonObjectRequest(Request.Method.POST, URL + "/create", requestBody,
+            response -> {
                 try {
-                    _userId = json.getString("id");
-                    _roomCode = json.getString("gameId");
+                    _userId = response.getString("id");
+                    _roomCode = response.getString("gameId");
                     startAsHost();
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
-            } else if (_uri.equals(URL + "/lobby-ping")) {
+            }, error -> {
+                System.out.println("here");
+            }
+        );
+    }
+
+    private JsonObjectRequest getLobbyPingRequest(JSONObject requestBody) {
+        return new JsonObjectRequest(Request.Method.POST, URL + "/lobby-ping", requestBody,
+            response -> {
                 // Parse result into game status and usernames and update the "usernames" ArrayList
                 // (automatically updates the ListView)
                 try {
                     setConnected(true);
-                    _gameStatus = json.getString("gameStatus");
-                    JSONArray usernameArr = json.getJSONArray("usernames");
+                    _gameStatus = response.getString("gameStatus");
+                    JSONArray usernameArr = response.getJSONArray("usernames");
                     ArrayList<String> new_usernames = new ArrayList<>();
                     //Iterating JSON array
                     for (int i = 0; i < usernameArr.length(); ++i) {
@@ -371,25 +346,29 @@ public class StartActivity extends AppCompatActivity {
                     startGame();
                 } else if (_gameStatus.equals("ABANDONED")) {
                     handleAbandoned();
+                } else {
+                    // crash
                 }
-            } else if (_uri.equals(URL + "/join")) {
-                // Parse result into user UUID and generated room code
-                try {
-                    _userId = json.getString("id");
-                    _roomCode = json.getString("gameId");
-                    startAsJoin();
-                } catch (JSONException e) {
-                    throw new RuntimeException(e);
-                }
-            } else if (_uri.equals(URL + "/start")) {
+            }, error -> {
+
+            }
+        );
+    }
+
+    private StringRequest getStartRequest(JSONObject requestBody) {
+        return new StringRequest(Request.Method.GET, URL + "/start",
+            response -> {
                 // Success: A 200 will be sent with a boolean indicating that the game was started
                 //          successfully.
-                if (Boolean.valueOf(result)) {
+                if (Boolean.valueOf(response)) {
                     startGame();
                 }
+            }, error -> {
+                // do nothing?
             }
-        }
+        );
     }
+
 }
 
 
