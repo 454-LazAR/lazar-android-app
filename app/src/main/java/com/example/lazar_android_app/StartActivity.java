@@ -65,8 +65,8 @@ public class StartActivity extends AppCompatActivity {
         // update room roster
         roster = findViewById(R.id.roster);
         usernames = new ArrayList<>();
-        adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1, R.id.listText,
+        adapter = new ArrayAdapter<String>(this,
+                R.layout.text_array_adapter,
                 usernames);
         roster.setAdapter(adapter);
 
@@ -83,8 +83,7 @@ public class StartActivity extends AppCompatActivity {
         roster = findViewById(R.id.roster);
         usernames = new ArrayList<>();
         adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1,
-                R.id.listText,
+                R.layout.text_array_adapter,
                 usernames);
         roster.setAdapter(adapter);
 

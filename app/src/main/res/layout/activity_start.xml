@@ -43,6 +43,7 @@
             android:onClick="submitNickname"
             style="@style/ButtonHome"
             android:text="JOIN" />
+
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="fill_parent">
@@ -63,11 +64,4 @@
                 android:visibility="gone"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/listText"
-        android:layout_width="match_parent"
-        android:layout_height="20dp"
-        android:textColor="@color/white"/>
-
 </LinearLayout>
