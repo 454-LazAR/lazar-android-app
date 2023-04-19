@@ -343,18 +343,28 @@ public class StartActivity extends AppCompatActivity {
         );
     }
 
-    private JsonObjectRequest getStartRequest(JSONObject requestBody) {
-        return new JsonObjectRequest(Request.Method.POST, URL + "/start", requestBody,
+    private StringRequest getStartRequest(JSONObject requestBody) {
+        return new StringRequest(Request.Method.POST, URL + "/start",
             response -> {
                 // Success: A 200 will be sent with a boolean indicating that the game was started
                 //          successfully.
-                if (Boolean.valueOf(response.toString())) {
+                if (Boolean.valueOf(response)) {
                     startGame();
                 }
             }, error -> {
                 // do nothing?
             }
-        );
+        ) {
+            @Override
+            public byte[] getBody() {
+                return requestBody.toString().getBytes();
+            }
+
+            @Override
+            public String getBodyContentType() {
+                return "application/json";
+            }
+        };
     }
 
 }

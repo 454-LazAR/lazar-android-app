@@ -515,16 +515,24 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         );
     }
 
-    private JsonObjectRequest getCheckHitRequest(JSONObject requestBody) {
-        return new JsonObjectRequest(Request.Method.POST, URL + "/check-hit", requestBody,
-            response -> {
-                if (Boolean.valueOf(response.toString())) {
-                    fireButton.setBackgroundColor(Color.MAGENTA);
-                }
-            }, error -> {
+    private StringRequest getCheckHitRequest(JSONObject requestBody) {
+        return new StringRequest(Request.Method.POST, URL + "/check-hit",
+                response -> {
+                    if (Boolean.valueOf(response)) {
+                        fireButton.setBackgroundColor(Color.MAGENTA);
+                    }
+                }, error -> {
 
+        }) {
+            @Override
+            public byte[] getBody() {
+                return requestBody.toString().getBytes();
             }
-        );
-    }
 
+            @Override
+            public String getBodyContentType() {
+                return "application/json";
+            }
+        };
+    }
 }
