@@ -502,11 +502,11 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
                     if (_gameStatus.equals("FINISHED") && _health > 0) {
                         // VICTORY
-                        victoryScreen(findViewById(R.layout.activity_game));
+                        victoryScreen();
                     }
                     else if (_health <= 0) {
                         // GAME OVER
-                        lossScreen(findViewById(R.layout.activity_game));
+                        lossScreen();
                     }
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
@@ -543,8 +543,9 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      * This method displays the victory screen.
      * TODO: Display stats such as damage dealt, damage taken, eliminations, etc.
      */
-    public void victoryScreen(View view){
+    public void victoryScreen(){
         ImageView skyPopup = findViewById(R.id.skyBackground);
+
         skyPopup.setVisibility(View.VISIBLE);
 
         ImageView victoryPopup = findViewById(R.id.winScreen);
@@ -571,7 +572,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      * This method displays the loss screen.
      * TODO: Display stats such as damage dealt, damage taken, eliminations, etc.
      */
-    public void lossScreen(View view){
+    public void lossScreen(){
         ImageView stormPopup = findViewById(R.id.stormBackground);
         stormPopup.setVisibility(View.VISIBLE);
 
