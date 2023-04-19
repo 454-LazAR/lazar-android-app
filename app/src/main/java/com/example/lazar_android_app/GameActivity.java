@@ -1,5 +1,7 @@
 package com.example.lazar_android_app;
 
+import static com.example.lazar_android_app.HomeActivity.URL;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -9,7 +11,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
-import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -19,7 +20,6 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
@@ -34,12 +34,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
-import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.Preview;
-import androidx.camera.core.ZoomState;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
@@ -83,9 +81,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private ObjectDetectorHelper objectDetector;
     private float minConfidence = (float) 0.6;
     private float zoomRatio = 4.0f;
-    
-    protected static final String URL = "https://laz-ar.duckdns.org:8443";
-    
+
     // LocationManager and LocationListener work together to provide continuous async updates
     LocationManager lm;
     private final LocationListener locationListener = new LocationListener() {
