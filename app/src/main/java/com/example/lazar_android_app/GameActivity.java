@@ -1,5 +1,7 @@
 package com.example.lazar_android_app;
 
+import static com.example.lazar_android_app.HomeActivity.URL;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -9,7 +11,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
-import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -19,7 +20,6 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
@@ -34,18 +34,21 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
-import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.Preview;
-import androidx.camera.core.ZoomState;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpResponse;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpStatus;
@@ -83,6 +86,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private ObjectDetectorHelper objectDetector;
     private float minConfidence = (float) 0.6;
     private float zoomRatio = 4.0f;
+
     // LocationManager and LocationListener work together to provide continuous async updates
     LocationManager lm;
     private final LocationListener locationListener = new LocationListener() {
@@ -103,6 +107,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private int REQUEST_CODE_PERMISSIONS = 1001;
     private Handler gameHandler;
     private Runnable gameRunnable;
+    private RequestQueue queue;
     Camera camera;
     CameraControl cameraControl;
     PreviewView mPreviewView;
@@ -112,6 +117,11 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     TextView latView;
     TextView longView;
     TextView bearView;
+
+    @Override
+    public void onBackPressed() {
+        Toast.makeText(this, "Swiper to previous screen is disabled", Toast.LENGTH_SHORT).show();
+    }
 
     /**
      * During the create function, we boot up the layout and scale & set the health bar to 100.
@@ -128,6 +138,8 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game);
+
+        queue = Volley.newRequestQueue(this);
 
         // Decompile extras
         Bundle extras = getIntent().getExtras();
@@ -191,7 +203,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                     body.put("latitude", _latitude);
                     body.put("longitude", _longitude);
                     body.put("timestamp", java.time.Instant.now());
-                    new RequestTask().execute("http://143.244.200.36:8080/game-ping", body.toString());
+                    queue.add(getGamePingRequest(body));
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
@@ -341,7 +353,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 body.put("latitude", _latitude);
                 body.put("longitude", _longitude);
                 body.put("heading", (double)_bearing);
-                new RequestTask().execute("http://143.244.200.36:8080/check-hit", body.toString());
+                queue.add(getCheckHitRequest(body));
             } catch (JSONException e) {
                 throw new RuntimeException(e);
             }
@@ -480,76 +492,12 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         // who cares?
     }
 
-    private class RequestTask extends AsyncTask<String, String, String> {
-        private String _uri = null;
-        private String _body = null;
-        HttpResponse response;
-
-        @Override
-        protected String doInBackground(String... uri) {
-            _uri = uri[0];
-            if (uri.length == 2) {
-                _body = uri[1];
-            }
-            HttpClient httpclient = new DefaultHttpClient();
-            String responseString = null;
-            try {
-                if (_uri.equals("http://143.244.200.36:8080/game-ping")) {
-                    // Build a POST request with a JSON body
-                    HttpPost req = new HttpPost(_uri);
-                    StringEntity params = new StringEntity(_body);
-                    req.addHeader("content-type", "application/json");
-                    req.setEntity(params);
-                    response = httpclient.execute(req);
-                } else if (_uri.equals("http://143.244.200.36:8080/check-hit")) {
-                    // TODO: REFACTOR THIS!!
-                    // Build a POST request with a JSON body
-                    HttpPost req = new HttpPost(_uri);
-                    StringEntity params = new StringEntity(_body);
-                    req.addHeader("content-type", "application/json");
-                    req.setEntity(params);
-                    response = httpclient.execute(req);
-                }
-
-                StatusLine statusLine = response.getStatusLine();
-                if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    response.getEntity().writeTo(out);
-                    responseString = out.toString();
-                    out.close();
-                } else {
-                    //Closes the connection.
-                    response.getEntity().getContent().close();
-                    throw new IOException(statusLine.getReasonPhrase());
-                }
-            } catch (ClientProtocolException e) {
-                //TODO Handle problems..
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return responseString;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-            //Do anything with response...
-
-            JSONObject json = null;
-            if (result != null) {
+    private JsonObjectRequest getGamePingRequest(JSONObject requestBody) {
+        return new JsonObjectRequest(Request.Method.POST, URL + "/game-ping", requestBody,
+            response -> {
                 try {
-                    json = new JSONObject(result);
-                } catch (JSONException e) {
-                    // don't throw anything yet
-                    // this won't be a JSON after GET /hello-world
-                }
-            }
-
-            // Switch based on executed API call
-            if (_uri.equals("http://143.244.200.36:8080/game-ping")) {
-                try {
-                    _gameStatus = json.getString("gameStatus");
-                    _health = json.getInt("health");
+                    _gameStatus = response.getString("gameStatus");
+                    _health = response.getInt("health");
 
                     if (_gameStatus.equals("FINISHED") && _health > 0) {
                         // VICTORY
@@ -561,11 +509,30 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                     throw new RuntimeException(e);
                 }
                 healthBar.setProgress(_health);
-            } else if (_uri.equals("http://143.244.200.36:8080/check-hit")) {
-                if (Boolean.valueOf(result)) {
-                    fireButton.setBackgroundColor(Color.MAGENTA);
-                }
+            }, error -> {
+
             }
-        }
+        );
+    }
+
+    private StringRequest getCheckHitRequest(JSONObject requestBody) {
+        return new StringRequest(Request.Method.POST, URL + "/check-hit",
+                response -> {
+                    if (Boolean.valueOf(response)) {
+                        fireButton.setBackgroundColor(Color.MAGENTA);
+                    }
+                }, error -> {
+
+        }) {
+            @Override
+            public byte[] getBody() {
+                return requestBody.toString().getBytes();
+            }
+
+            @Override
+            public String getBodyContentType() {
+                return "application/json";
+            }
+        };
     }
 }

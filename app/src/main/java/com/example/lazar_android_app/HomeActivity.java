@@ -1,10 +1,10 @@
 package com.example.lazar_android_app;
 
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.graphics.Color;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
@@ -12,20 +12,12 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpResponse;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpStatus;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.StatusLine;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.ClientProtocolException;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.HttpClient;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpGet;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.impl.client.DefaultHttpClient;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -33,11 +25,26 @@ public class HomeActivity extends AppCompatActivity {
 
     private Handler connHandler;
     private Runnable connRunnable;
+    private RequestQueue queue;
+    protected static final String URL = "https://laz-ar.duckdns.org:8443";
 
+    private StringRequest helloWorldRequest = new StringRequest(Request.Method.GET, URL + "/hello-world",
+            response -> {
+                setConnected(true);
+            }, error -> {
+        setConnected(false);
+    });
+
+    @Override
+    public void onBackPressed() {
+        Toast.makeText(this, "Swiper to previous screen is disabled", Toast.LENGTH_SHORT).show();
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+
+        queue = Volley.newRequestQueue(this);
 
         // Define async thread to run to update connection
         connHandler = new Handler();
@@ -45,7 +52,7 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void run() {
                 // Do your background task here
-                new RequestTask().execute("http://143.244.200.36:8080/hello-world");
+                queue.add(helloWorldRequest);
 
                 connHandler.postDelayed(this, 2000); // Schedule the task to run again after 2 seconds
             }
@@ -80,6 +87,7 @@ public class HomeActivity extends AppCompatActivity {
             Intent startStart = new Intent(getApplicationContext(), StartActivity.class);
             startStart.putExtra("mode", "HOST");
             stopConnTask();
+            queue.cancelAll(request -> true);;
             startActivity(startStart);
         }
         else {
@@ -111,6 +119,7 @@ public class HomeActivity extends AppCompatActivity {
         startStart.putExtra("mode", "JOIN");
         startStart.putExtra("roomCode", code);
         stopConnTask();
+        queue.cancelAll(request -> true);;
         startActivity(startStart);
     }
 
@@ -132,67 +141,4 @@ public class HomeActivity extends AppCompatActivity {
 //        startActivity(startGame);
 //    }
 
-    private class RequestTask extends AsyncTask<String, String, String> {
-        private String _uri = null;
-        private String _body = null;
-        HttpResponse response;
-
-        @Override
-        protected String doInBackground(String... uri) {
-            _uri = uri[0];
-            if (uri.length == 2) {
-                _body = uri[1];
-            }
-            HttpClient httpclient = new DefaultHttpClient();
-            String responseString = null;
-            try {
-                if (_uri.equals("http://143.244.200.36:8080/hello-world")) {
-                    HttpGet req = new HttpGet(_uri);
-                    response = httpclient.execute(req);
-                }
-                StatusLine statusLine = response.getStatusLine();
-                if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    response.getEntity().writeTo(out);
-                    responseString = out.toString();
-                    out.close();
-                } else {
-                    //Closes the connection.
-                    response.getEntity().getContent().close();
-                    throw new IOException(statusLine.getReasonPhrase());
-                }
-            } catch (ClientProtocolException e) {
-                //TODO Handle problems..
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return responseString;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-            //Do anything with response...
-
-            JSONObject json = null;
-            if (result != null) {
-                try {
-                    json = new JSONObject(result);
-                } catch (JSONException e) {
-                    // don't throw anything yet
-                    // this won't be a JSON after GET /hello-world
-                }
-            }
-
-            // Switch based on executed API call
-            if (result == null) {
-                // fail to connect to server
-                setConnected(false);
-            }
-            else if (result.equals("Hello world!")) {
-                // server connection success
-                setConnected(true);
-            }
-        }
-    }
 }
