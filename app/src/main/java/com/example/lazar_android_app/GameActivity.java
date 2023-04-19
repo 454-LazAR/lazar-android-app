@@ -44,6 +44,11 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpResponse;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpStatus;
@@ -102,6 +107,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private int REQUEST_CODE_PERMISSIONS = 1001;
     private Handler gameHandler;
     private Runnable gameRunnable;
+    private RequestQueue queue;
     Camera camera;
     CameraControl cameraControl;
     PreviewView mPreviewView;
@@ -132,6 +138,8 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game);
+
+        queue = Volley.newRequestQueue(this);
 
         // Decompile extras
         Bundle extras = getIntent().getExtras();
@@ -195,7 +203,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                     body.put("latitude", _latitude);
                     body.put("longitude", _longitude);
                     body.put("timestamp", java.time.Instant.now());
-                    new RequestTask().execute(URL + "/game-ping", body.toString());
+                    queue.add(getGamePingRequest(body));
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
@@ -345,7 +353,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 body.put("latitude", _latitude);
                 body.put("longitude", _longitude);
                 body.put("heading", (double)_bearing);
-                new RequestTask().execute(URL + "/check-hit", body.toString());
+                queue.add(getCheckHitRequest(body));
             } catch (JSONException e) {
                 throw new RuntimeException(e);
             }
@@ -484,76 +492,12 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         // who cares?
     }
 
-    private class RequestTask extends AsyncTask<String, String, String> {
-        private String _uri = null;
-        private String _body = null;
-        HttpResponse response;
-
-        @Override
-        protected String doInBackground(String... uri) {
-            _uri = uri[0];
-            if (uri.length == 2) {
-                _body = uri[1];
-            }
-            HttpClient httpclient = new DefaultHttpClient();
-            String responseString = null;
-            try {
-                if (_uri.equals(URL + "/game-ping")) {
-                    // Build a POST request with a JSON body
-                    HttpPost req = new HttpPost(_uri);
-                    StringEntity params = new StringEntity(_body);
-                    req.addHeader("content-type", "application/json");
-                    req.setEntity(params);
-                    response = httpclient.execute(req);
-                } else if (_uri.equals(URL + "/check-hit")) {
-                    // TODO: REFACTOR THIS!!
-                    // Build a POST request with a JSON body
-                    HttpPost req = new HttpPost(_uri);
-                    StringEntity params = new StringEntity(_body);
-                    req.addHeader("content-type", "application/json");
-                    req.setEntity(params);
-                    response = httpclient.execute(req);
-                }
-
-                StatusLine statusLine = response.getStatusLine();
-                if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    response.getEntity().writeTo(out);
-                    responseString = out.toString();
-                    out.close();
-                } else {
-                    //Closes the connection.
-                    response.getEntity().getContent().close();
-                    throw new IOException(statusLine.getReasonPhrase());
-                }
-            } catch (ClientProtocolException e) {
-                //TODO Handle problems..
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return responseString;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-            //Do anything with response...
-
-            JSONObject json = null;
-            if (result != null) {
+    private JsonObjectRequest getGamePingRequest(JSONObject requestBody) {
+        return new JsonObjectRequest(Request.Method.POST, URL + "/game-ping", requestBody,
+            response -> {
                 try {
-                    json = new JSONObject(result);
-                } catch (JSONException e) {
-                    // don't throw anything yet
-                    // this won't be a JSON after GET /hello-world
-                }
-            }
-
-            // Switch based on executed API call
-            if (_uri.equals(URL + "/game-ping")) {
-                try {
-                    _gameStatus = json.getString("gameStatus");
-                    _health = json.getInt("health");
+                    _gameStatus = response.getString("gameStatus");
+                    _health = response.getInt("health");
 
                     if (_gameStatus.equals("FINISHED") && _health > 0) {
                         // VICTORY
@@ -565,11 +509,22 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                     throw new RuntimeException(e);
                 }
                 healthBar.setProgress(_health);
-            } else if (_uri.equals(URL + "/check-hit")) {
-                if (Boolean.valueOf(result)) {
+            }, error -> {
+
+            }
+        );
+    }
+
+    private JsonObjectRequest getCheckHitRequest(JSONObject requestBody) {
+        return new JsonObjectRequest(Request.Method.POST, URL + "/check-hit", requestBody,
+            response -> {
+                if (Boolean.valueOf(response.toString())) {
                     fireButton.setBackgroundColor(Color.MAGENTA);
                 }
+            }, error -> {
+
             }
-        }
+        );
     }
+
 }
