@@ -87,7 +87,7 @@ public class HomeActivity extends AppCompatActivity {
             Intent startStart = new Intent(getApplicationContext(), StartActivity.class);
             startStart.putExtra("mode", "HOST");
             stopConnTask();
-            queue.cancelAll(null);
+            queue.cancelAll(request -> true);;
             startActivity(startStart);
         }
         else {
@@ -119,7 +119,7 @@ public class HomeActivity extends AppCompatActivity {
         startStart.putExtra("mode", "JOIN");
         startStart.putExtra("roomCode", code);
         stopConnTask();
-        queue.cancelAll(null);
+        queue.cancelAll(request -> true);;
         startActivity(startStart);
     }
 

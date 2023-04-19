@@ -238,7 +238,7 @@ public class StartActivity extends AppCompatActivity {
     private void startGame() {
         // Stop the running threads!! We're starting a GAME bestie LET'S GOOOOOOO
         stopLobbyPing();
-        queue.cancelAll(null);
+        queue.cancelAll(request -> true);
 
         // Put extras to transfer data to GameActivity, then start the game activity
         Intent startGame = new Intent(getApplicationContext(), GameActivity.class);
@@ -250,7 +250,7 @@ public class StartActivity extends AppCompatActivity {
         Toast.makeText(this, "Game was abandoned by the host.", Toast.LENGTH_SHORT).show();
 
         stopLobbyPing();
-        queue.cancelAll(null);
+        queue.cancelAll(request -> true);;
 
         Intent homeActivity = new Intent(getApplicationContext(), HomeActivity.class);
         startActivity(homeActivity);
@@ -343,12 +343,12 @@ public class StartActivity extends AppCompatActivity {
         );
     }
 
-    private StringRequest getStartRequest(JSONObject requestBody) {
-        return new StringRequest(Request.Method.GET, URL + "/start",
+    private JsonObjectRequest getStartRequest(JSONObject requestBody) {
+        return new JsonObjectRequest(Request.Method.POST, URL + "/start", requestBody,
             response -> {
                 // Success: A 200 will be sent with a boolean indicating that the game was started
                 //          successfully.
-                if (Boolean.valueOf(response)) {
+                if (Boolean.valueOf(response.toString())) {
                     startGame();
                 }
             }, error -> {
