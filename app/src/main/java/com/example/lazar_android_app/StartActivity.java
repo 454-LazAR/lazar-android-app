@@ -84,7 +84,6 @@ public class StartActivity extends AppCompatActivity {
         usernames = new ArrayList<>();
         adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1,
-:queue
                 usernames);
         roster.setAdapter(adapter);
 
