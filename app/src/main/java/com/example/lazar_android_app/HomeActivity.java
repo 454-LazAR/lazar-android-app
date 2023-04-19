@@ -81,6 +81,7 @@ public class HomeActivity extends AppCompatActivity {
             startStart.putExtra("mode", "HOST");
             stopConnTask();
             startActivity(startStart);
+            finish();
         }
         else {
             // DEBUG MODE ACTIONS
@@ -112,6 +113,7 @@ public class HomeActivity extends AppCompatActivity {
         startStart.putExtra("roomCode", code);
         stopConnTask();
         startActivity(startStart);
+        finish();
     }
 
     private void setConnected(boolean connected) {

@@ -243,6 +243,7 @@ public class StartActivity extends AppCompatActivity {
         startGame.putExtra("userId", _userId);
         stopLobbyPing();
         startActivity(startGame);
+        finish();
     }
 
     private class RequestTask extends AsyncTask<String, String, String> {
