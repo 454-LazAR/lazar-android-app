@@ -601,6 +601,6 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     public void returnHome(View view){
         Intent homeScreen = new Intent(getApplicationContext(), HomeActivity.class);
         startActivity(homeScreen);
-        //finish();
+        finish();
     }
 }

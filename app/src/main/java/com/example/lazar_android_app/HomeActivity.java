@@ -122,7 +122,7 @@ public class HomeActivity extends AppCompatActivity {
         stopConnTask();
         queue.cancelAll(request -> true);;
         startActivity(startStart);
-        //finish();
+        finish();
     }
 
     private void setConnected(boolean connected) {

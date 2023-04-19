@@ -245,7 +245,7 @@ public class StartActivity extends AppCompatActivity {
         Intent startGame = new Intent(getApplicationContext(), GameActivity.class);
         startGame.putExtra("userId", _userId);
         startActivity(startGame);
-        //finish();
+        finish();
     }
 
     private void handleAbandoned() {
