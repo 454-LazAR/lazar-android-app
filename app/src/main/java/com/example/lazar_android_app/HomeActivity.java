@@ -89,6 +89,7 @@ public class HomeActivity extends AppCompatActivity {
             stopConnTask();
             queue.cancelAll(request -> true);;
             startActivity(startStart);
+            finish();
         }
         else {
             // DEBUG MODE ACTIONS
@@ -121,6 +122,7 @@ public class HomeActivity extends AppCompatActivity {
         stopConnTask();
         queue.cancelAll(request -> true);;
         startActivity(startStart);
+        finish();
     }
 
     private void setConnected(boolean connected) {

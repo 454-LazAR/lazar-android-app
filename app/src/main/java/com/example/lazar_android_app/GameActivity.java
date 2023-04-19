@@ -4,6 +4,7 @@ import static com.example.lazar_android_app.HomeActivity.URL;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -501,9 +502,11 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
                     if (_gameStatus.equals("FINISHED") && _health > 0) {
                         // VICTORY
+                        victoryScreen(findViewById(R.layout.activity_game));
                     }
                     else if (_health <= 0) {
                         // GAME OVER
+                        lossScreen(findViewById(R.layout.activity_game));
                     }
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
@@ -534,5 +537,70 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 return "application/json";
             }
         };
+    }
+
+    /**
+     * This method displays the victory screen.
+     * TODO: Display stats such as damage dealt, damage taken, eliminations, etc.
+     */
+    public void victoryScreen(View view){
+        ImageView skyPopup = findViewById(R.id.skyBackground);
+        skyPopup.setVisibility(View.VISIBLE);
+
+        ImageView victoryPopup = findViewById(R.id.winScreen);
+        victoryPopup.setVisibility(View.VISIBLE);
+
+        Button exitButton = findViewById(R.id.exitButton);
+        Button fireButton = findViewById(R.id.fireButton);
+        fireButton.setVisibility(View.GONE);
+        exitButton.setVisibility(View.VISIBLE);
+
+        ImageView capture = findViewById(R.id.capture);
+        TextView latView = findViewById(R.id.latView);
+        TextView longView = findViewById(R.id.longView);
+        TextView bearView = findViewById(R.id.bearView);
+        Button zoomButton = findViewById(R.id.zoomButton);
+        capture.setVisibility(View.GONE);
+        latView.setVisibility(View.GONE);
+        longView.setVisibility(View.GONE);
+        bearView.setVisibility(View.GONE);
+        zoomButton.setVisibility(View.GONE);
+    }
+
+    /**
+     * This method displays the loss screen.
+     * TODO: Display stats such as damage dealt, damage taken, eliminations, etc.
+     */
+    public void lossScreen(View view){
+        ImageView stormPopup = findViewById(R.id.stormBackground);
+        stormPopup.setVisibility(View.VISIBLE);
+
+        ImageView lossPopup = findViewById(R.id.lossScreen);
+        lossPopup.setVisibility(View.VISIBLE);
+
+        Button exitButton = findViewById(R.id.exitButton);
+        Button fireButton = findViewById(R.id.fireButton);
+        fireButton.setVisibility(View.GONE);
+        exitButton.setVisibility(View.VISIBLE);
+
+        ImageView capture = findViewById(R.id.capture);
+        TextView latView = findViewById(R.id.latView);
+        TextView longView = findViewById(R.id.longView);
+        TextView bearView = findViewById(R.id.bearView);
+        Button zoomButton = findViewById(R.id.zoomButton);
+        capture.setVisibility(View.GONE);
+        latView.setVisibility(View.GONE);
+        longView.setVisibility(View.GONE);
+        bearView.setVisibility(View.GONE);
+        zoomButton.setVisibility(View.GONE);
+    }
+
+    /**
+     * This method returns the user back to the home screen.
+     */
+    public void returnHome(View view){
+        Intent homeScreen = new Intent(getApplicationContext(), HomeActivity.class);
+        startActivity(homeScreen);
+        finish();
     }
 }

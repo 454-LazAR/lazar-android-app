@@ -64,6 +64,59 @@
         android:textColor="@color/black"
         app:layout_constraintBottom_toTopOf="@id/debugData"/>
 
+    <ImageView
+        android:id="@+id/skyBackground"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        android:src="@drawable/sky"
+        android:contentDescription="@string/sky_background"/>
+    
+    <ImageView
+        android:id="@+id/winScreen"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/fireButton"
+        app:layout_constraintTop_toTopOf="parent"
+        android:visibility="gone"
+        android:src="@drawable/trophy"
+        android:contentDescription="@string/win_image"/>
+
+    <ImageView
+        android:id="@+id/stormBackground"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        android:src="@drawable/stormclouds"
+        android:contentDescription="@string/storm_clouds_background"/>
+
+    <ImageView
+        android:id="@+id/lossScreen"
+        android:layout_width="match_parent"
+        app:layout_constraintBottom_toTopOf="@id/exitButton"
+        app:layout_constraintTop_toTopOf="parent"
+        android:visibility="gone"
+        android:src="@drawable/gravestone"
+        android:layout_height="0dp"
+        android:contentDescription="@string/loss_image"
+        />
+
+    <Button
+        android:id="@+id/exitButton"
+        android:layout_width="match_parent"
+        app:layout_constraintTop_toTopOf="@+id/fireButton"
+        app:layout_constraintBottom_toBottomOf="@+id/fireButton"
+        app:layout_constraintLeft_toLeftOf="@+id/fireButton"
+        app:layout_constraintRight_toRightOf="@+id/fireButton"
+        android:layout_height="wrap_content"
+        android:text="@string/exit_end_screen"
+        android:textSize="60sp"
+        android:onClick="returnHome"
+        android:visibility="gone"
+        android:textColor="@color/black" />
+
     <LinearLayout
         android:id="@+id/debugData"
         android:layout_width="match_parent"

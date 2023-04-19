@@ -26,4 +26,8 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:background">@color/teal_700</item>
     </style>
+    <style name="ListElements">
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">20dp</item>
+    </style>
 </resources>

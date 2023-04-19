@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -65,7 +66,7 @@ public class StartActivity extends AppCompatActivity {
         roster = findViewById(R.id.roster);
         usernames = new ArrayList<>();
         adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1,
+                android.R.layout.simple_list_item_1, R.id.listText,
                 usernames);
         roster.setAdapter(adapter);
 
@@ -83,6 +84,7 @@ public class StartActivity extends AppCompatActivity {
         usernames = new ArrayList<>();
         adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1,
+                R.id.listText,
                 usernames);
         roster.setAdapter(adapter);
 
@@ -244,6 +246,7 @@ public class StartActivity extends AppCompatActivity {
         Intent startGame = new Intent(getApplicationContext(), GameActivity.class);
         startGame.putExtra("userId", _userId);
         startActivity(startGame);
+        finish();
     }
 
     private void handleAbandoned() {
