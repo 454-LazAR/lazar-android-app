@@ -83,6 +83,9 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private ObjectDetectorHelper objectDetector;
     private float minConfidence = (float) 0.6;
     private float zoomRatio = 4.0f;
+    
+    protected static final String URL = "http://laz-ar.duckdns.org:8080";
+    
     // LocationManager and LocationListener work together to provide continuous async updates
     LocationManager lm;
     private final LocationListener locationListener = new LocationListener() {
@@ -112,6 +115,11 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     TextView latView;
     TextView longView;
     TextView bearView;
+
+    @Override
+    public void onBackPressed() {
+        Toast.makeText(this, "Swiper to previous screen is disabled", Toast.LENGTH_SHORT).show();
+    }
 
     /**
      * During the create function, we boot up the layout and scale & set the health bar to 100.
@@ -191,7 +199,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                     body.put("latitude", _latitude);
                     body.put("longitude", _longitude);
                     body.put("timestamp", java.time.Instant.now());
-                    new RequestTask().execute("http://143.244.200.36:8080/game-ping", body.toString());
+                    new RequestTask().execute(URL + "/game-ping", body.toString());
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
@@ -341,7 +349,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 body.put("latitude", _latitude);
                 body.put("longitude", _longitude);
                 body.put("heading", (double)_bearing);
-                new RequestTask().execute("http://143.244.200.36:8080/check-hit", body.toString());
+                new RequestTask().execute(URL + "/check-hit", body.toString());
             } catch (JSONException e) {
                 throw new RuntimeException(e);
             }
@@ -494,14 +502,14 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
             HttpClient httpclient = new DefaultHttpClient();
             String responseString = null;
             try {
-                if (_uri.equals("http://143.244.200.36:8080/game-ping")) {
+                if (_uri.equals(URL + "/game-ping")) {
                     // Build a POST request with a JSON body
                     HttpPost req = new HttpPost(_uri);
                     StringEntity params = new StringEntity(_body);
                     req.addHeader("content-type", "application/json");
                     req.setEntity(params);
                     response = httpclient.execute(req);
-                } else if (_uri.equals("http://143.244.200.36:8080/check-hit")) {
+                } else if (_uri.equals(URL + "/check-hit")) {
                     // TODO: REFACTOR THIS!!
                     // Build a POST request with a JSON body
                     HttpPost req = new HttpPost(_uri);
@@ -546,7 +554,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
             }
 
             // Switch based on executed API call
-            if (_uri.equals("http://143.244.200.36:8080/game-ping")) {
+            if (_uri.equals(URL + "/game-ping")) {
                 try {
                     _gameStatus = json.getString("gameStatus");
                     _health = json.getInt("health");
@@ -561,7 +569,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                     throw new RuntimeException(e);
                 }
                 healthBar.setProgress(_health);
-            } else if (_uri.equals("http://143.244.200.36:8080/check-hit")) {
+            } else if (_uri.equals(URL + "/check-hit")) {
                 if (Boolean.valueOf(result)) {
                     fireButton.setBackgroundColor(Color.MAGENTA);
                 }

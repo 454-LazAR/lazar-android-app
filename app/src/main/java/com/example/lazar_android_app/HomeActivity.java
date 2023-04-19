@@ -1,5 +1,7 @@
 package com.example.lazar_android_app;
 
+import static com.example.lazar_android_app.GameActivity.URL;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
@@ -12,6 +14,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpResponse;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpStatus;
@@ -35,6 +38,10 @@ public class HomeActivity extends AppCompatActivity {
     private Runnable connRunnable;
 
     @Override
+    public void onBackPressed() {
+        Toast.makeText(this, "Swiper to previous screen is disabled", Toast.LENGTH_SHORT).show();
+    }
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
@@ -45,7 +52,7 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void run() {
                 // Do your background task here
-                new RequestTask().execute("http://143.244.200.36:8080/hello-world");
+                new RequestTask().execute(URL + "/hello-world");
 
                 connHandler.postDelayed(this, 2000); // Schedule the task to run again after 2 seconds
             }
@@ -146,7 +153,7 @@ public class HomeActivity extends AppCompatActivity {
             HttpClient httpclient = new DefaultHttpClient();
             String responseString = null;
             try {
-                if (_uri.equals("http://143.244.200.36:8080/hello-world")) {
+                if (_uri.equals(URL + "/hello-world")) {
                     HttpGet req = new HttpGet(_uri);
                     response = httpclient.execute(req);
                 }

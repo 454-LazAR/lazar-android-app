@@ -1,5 +1,7 @@
 package com.example.lazar_android_app;
 
+import static com.example.lazar_android_app.GameActivity.URL;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
@@ -13,6 +15,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpResponse;
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpStatus;
@@ -45,6 +48,11 @@ public class StartActivity extends AppCompatActivity {
     private String _userId;
     private String _roomCode;
     private String _gameStatus;
+
+    @Override
+    public void onBackPressed() {
+        Toast.makeText(this, "Swiper to previous screen is disabled", Toast.LENGTH_SHORT).show();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,7 +92,7 @@ public class StartActivity extends AppCompatActivity {
             @Override
             public void run() {
                 // Do your background task here
-                new RequestTask().execute("http://143.244.200.36:8080/hello-world");
+                new RequestTask().execute(URL + "/hello-world");
 
                 connHandler.postDelayed(this, 2000); // Schedule the task to run again after 2 seconds
             }
@@ -99,12 +107,12 @@ public class StartActivity extends AppCompatActivity {
                 JSONObject body = new JSONObject();
                 try {
                     body.put("playerId", _userId);
-                    new RequestTask().execute("http://143.244.200.36:8080/lobby-ping", body.toString());
+                    new RequestTask().execute(URL + "/lobby-ping", body.toString());
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
 
-                lobbyHandler.postDelayed(this, 500); // Schedule the task to run again after 1 second
+                lobbyHandler.postDelayed(this, 1000); // Schedule the task to run again after 1 second
             }
         };
 
@@ -130,7 +138,6 @@ public class StartActivity extends AppCompatActivity {
      * Run this to start the lobby ping thread! Also stops the connectivity thread.
      */
     private void startLobbyPing() {
-        stopConnTask();
         lobbyHandler.post(lobbyRunnable);
     }
 
@@ -177,7 +184,7 @@ public class StartActivity extends AppCompatActivity {
         if (hosting) {
             try {
                 body.put("username", username);
-                new RequestTask().execute("http://143.244.200.36:8080/create", body.toString());
+                new RequestTask().execute(URL + "/create", body.toString());
                 startAsHost();
             } catch (JSONException e) {
                 throw new RuntimeException(e);
@@ -187,7 +194,7 @@ public class StartActivity extends AppCompatActivity {
             try {
                 body.put("username", username);
                 body.put("gameId", _roomCode);
-                new RequestTask().execute("http://143.244.200.36:8080/join", body.toString());
+                new RequestTask().execute(URL + "/join", body.toString());
                 startAsJoin();
             } catch (JSONException e) {
                 throw new RuntimeException(e);
@@ -221,7 +228,7 @@ public class StartActivity extends AppCompatActivity {
             throw new RuntimeException(e);
         }
 
-        new RequestTask().execute("http://143.244.200.36:8080/start", body.toString());
+        new RequestTask().execute(URL + "/start", body.toString());
     }
 
     /**
@@ -243,6 +250,10 @@ public class StartActivity extends AppCompatActivity {
         startActivity(startGame);
     }
 
+    private void handleAbandoned() {
+        Toast.makeText(this, "Game was abandoned by the host.", Toast.LENGTH_SHORT).show();
+    }
+
     private class RequestTask extends AsyncTask<String, String, String> {
         private String _uri = null;
         private String _body = null;
@@ -257,14 +268,14 @@ public class StartActivity extends AppCompatActivity {
             HttpClient httpclient = new DefaultHttpClient();
             String responseString = null;
             try {
-                if (_uri.equals("http://143.244.200.36:8080/hello-world")) {
+                if (_uri.equals(URL + "/hello-world")) {
                     // Build a param-less GET request
                     HttpGet req = new HttpGet(_uri);
                     response = httpclient.execute(req);
-                } else if (_uri.equals("http://143.244.200.36:8080/create") ||
-                        _uri.equals("http://143.244.200.36:8080/lobby-ping") ||
-                        _uri.equals("http://143.244.200.36:8080/join") ||
-                        _uri.equals("http://143.244.200.36:8080/start")) {
+                } else if (_uri.equals(URL + "/create") ||
+                        _uri.equals(URL + "/lobby-ping") ||
+                        _uri.equals(URL + "/join") ||
+                        _uri.equals(URL + "/start")) {
                     // Build a POST request with a JSON body
                     HttpPost req = new HttpPost(_uri);
                     StringEntity params = new StringEntity(_body);
@@ -314,7 +325,7 @@ public class StartActivity extends AppCompatActivity {
             } else if (result.equals("Hello world!")) {
                 // server connection success
                 setConnected(true);
-            } else if (_uri.equals("http://143.244.200.36:8080/create")) {
+            } else if (_uri.equals(URL + "/create")) {
                 // Parse result into user UUID and generated room code
                 try {
                     _userId = json.getString("id");
@@ -323,7 +334,7 @@ public class StartActivity extends AppCompatActivity {
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
-            } else if (_uri.equals("http://143.244.200.36:8080/lobby-ping")) {
+            } else if (_uri.equals(URL + "/lobby-ping")) {
                 // Parse result into game status and usernames and update the "usernames" ArrayList
                 // (automatically updates the ListView)
                 try {
@@ -359,9 +370,9 @@ public class StartActivity extends AppCompatActivity {
                 if (_gameStatus.equals("IN_PROGRESS")) {
                     startGame();
                 } else if (_gameStatus.equals("ABANDONED")) {
-                    // TODO: do something else! (Go back to lobby and show toast "Game abandoned" ?)
+                    handleAbandoned();
                 }
-            } else if (_uri.equals("http://143.244.200.36:8080/join")) {
+            } else if (_uri.equals(URL + "/join")) {
                 // Parse result into user UUID and generated room code
                 try {
                     _userId = json.getString("id");
@@ -370,7 +381,7 @@ public class StartActivity extends AppCompatActivity {
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
-            } else if (_uri.equals("http://143.244.200.36:8080/start")) {
+            } else if (_uri.equals(URL + "/start")) {
                 // Success: A 200 will be sent with a boolean indicating that the game was started
                 //          successfully.
                 if (Boolean.valueOf(result)) {
