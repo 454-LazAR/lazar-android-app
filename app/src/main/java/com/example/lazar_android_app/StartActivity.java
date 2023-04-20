@@ -5,12 +5,16 @@ import static com.example.lazar_android_app.HomeActivity.URL;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -119,6 +123,11 @@ public class StartActivity extends AppCompatActivity {
         startConnTask();
     }
 
+    public void hideKeyboard() {
+        InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
+        inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+    }
+
     /**
      * Run this to start the async connection thread!
      */
@@ -166,6 +175,8 @@ public class StartActivity extends AppCompatActivity {
         EditText nameField = findViewById(R.id.enterNickname);
         Button joinButton = findViewById(R.id.joinButton);
         String username = nameField.getText().toString();
+
+        hideKeyboard();
 
         if (!usernames.contains(username)) {
             usernames.add(username);
