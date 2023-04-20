@@ -191,6 +191,11 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 Location location = locationResult.getLastLocation();
                 _latitude = location.getLatitude();
                 _longitude = location.getLongitude();
+
+                if (DEBUG) {
+                    latView.setText("Latitude: " + _latitude);
+                    longView.setText("Longitude: " + _longitude);
+                }
             }
         }
     };
@@ -487,7 +492,12 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
             SensorManager.getOrientation(rotationMatrix, orientationAngles);
 
             // The orientationAngles array contains the azimuth, pitch, and roll angles
-            _bearing = orientationAngles[0];
+            float bearingRad = orientationAngles[0];
+            _bearing = (float) Math.toDegrees(bearingRad);
+
+            if(_bearing < 0) {
+                _bearing += 360;
+            }
 
             // Update the UI with the new orientation values
             bearView.setText("Bearing: " + _bearing);
