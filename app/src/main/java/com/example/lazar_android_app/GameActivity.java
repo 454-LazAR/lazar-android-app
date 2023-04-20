@@ -3,7 +3,6 @@ package com.example.lazar_android_app;
 import static com.example.lazar_android_app.HomeActivity.URL;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -17,15 +16,10 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -52,25 +46,18 @@ import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpResponse;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.HttpStatus;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.StatusLine;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.ClientProtocolException;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.HttpClient;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.client.methods.HttpPost;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.entity.StringEntity;
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.impl.client.DefaultHttpClient;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import kotlin.Pair;
 
@@ -82,35 +69,21 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private String _userId;
     private String _gameStatus;
     private int _health;
-    private double _longitude;
-    private double _latitude;
+    private Double _longitude;
+    private Double _latitude;
     private float _bearing;
     private SensorManager compassSensorManager;
     private ObjectDetectorHelper objectDetector;
     private float minConfidence = (float) 0.6;
     private float zoomRatio = 4.0f;
 
-    // LocationManager and LocationListener work together to provide continuous async updates
-    LocationManager lm;
-    private final LocationListener locationListener = new LocationListener() {
-        @Override
-        public void onLocationChanged(Location location) {
-            _latitude = location.getLatitude();
-            _longitude = location.getLongitude();
-
-            if (DEBUG) {
-                latView.setText("Latitude: " + _latitude);
-                longView.setText("Longitude: " + _longitude);
-            }
-        }
-    };
-
-    private Executor executor = Executors.newSingleThreadExecutor();
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
     private int REQUEST_CODE_PERMISSIONS = 1001;
     private Handler gameHandler;
     private Runnable gameRunnable;
     private RequestQueue queue;
+    private FusedLocationProviderClient fusedLocationProviderClient;
+
     Camera camera;
     CameraControl cameraControl;
     PreviewView mPreviewView;
@@ -169,27 +142,15 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         // set up sensor and its listener
         compassSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         compassSensorManager.registerListener(this,
-                compassSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),
+                compassSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR),
                 SensorManager.SENSOR_DELAY_NORMAL);
 
 
         if (allPermissionsGranted()) {
+            fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+
             // Initialize the camera
             startCamera();
-
-            // Get all possible location updates
-            lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            lm.requestLocationUpdates(LocationManager.FUSED_PROVIDER, 2, 0, locationListener);
-            //lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2, 0, locationListener);
-
-            Location location = lm.getLastKnownLocation(LocationManager.FUSED_PROVIDER);
-            _latitude = location.getLatitude();
-            _longitude = location.getLongitude();
-
-            if (DEBUG) {
-                latView.setText("Latitude: " + _latitude);
-                longView.setText("Longitude: " + _longitude);
-            }
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
@@ -199,6 +160,10 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         gameRunnable = new Runnable() {
             @Override
             public void run() {
+                if(_latitude == null || _longitude == null) {
+                    gameHandler.postDelayed(this, 1000);
+                    return;
+                }
                 // Do your background task here
                 JSONObject body = new JSONObject();
                 try {
@@ -219,10 +184,42 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         startGamePing();
     }
 
+    LocationCallback locationCallback = new LocationCallback() {
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+            if (locationResult != null) {
+                Location location = locationResult.getLastLocation();
+                _latitude = location.getLatitude();
+                _longitude = location.getLongitude();
+            }
+        }
+    };
+
+    /**
+     * Call this method to begin location updates. This thread should run at a quicker frequency
+     * than the game ping.
+     *
+     */
+    @SuppressLint("MissingPermission")
+    private void startLocationUpdates() {
+        LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(500); // Update location every 500 ms
+        fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, null);
+    }
+
+    /**
+     * Call this to stop location updates. (game over)
+     */
+    private void stopLocationUpdates() {
+        fusedLocationProviderClient.removeLocationUpdates(locationCallback);
+    }
+
     /**
      * Run this to start the async game ping thread!
      */
     private void startGamePing() {
+        startLocationUpdates();
         gameHandler.post(gameRunnable);
     }
 
@@ -230,6 +227,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      * Run this to stop the async game ping thread!
      */
     private void stopGamePing() {
+        stopLocationUpdates();
         gameHandler.removeCallbacks(gameRunnable);
     }
 
@@ -240,18 +238,15 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
         final ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
 
-        cameraProviderFuture.addListener(new Runnable() {
-            @Override
-            public void run() {
-                try {
+        cameraProviderFuture.addListener(() -> {
+            try {
 
-                    ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-                    bindPreview(cameraProvider);
+                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                bindPreview(cameraProvider);
 
-                } catch (ExecutionException | InterruptedException e) {
-                    // No errors need to be handled for this Future.
-                    // This should never be reached.
-                }
+            } catch (ExecutionException | InterruptedException e) {
+                // No errors need to be handled for this Future.
+                // This should never be reached.
             }
         }, ContextCompat.getMainExecutor(this));
     }
@@ -355,7 +350,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 body.put("timestamp", java.time.Instant.now());
                 body.put("latitude", _latitude);
                 body.put("longitude", _longitude);
-                body.put("heading", (double)_bearing);
+                body.put("heading", _bearing);
                 queue.add(getCheckHitRequest(body));
             } catch (JSONException e) {
                 throw new RuntimeException(e);
@@ -483,9 +478,18 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     }
 
     @Override
-    public void onSensorChanged(SensorEvent sensorEvent) {
-        if (sensorEvent.sensor.getType() == Sensor.TYPE_ORIENTATION){
-            _bearing = sensorEvent.values[0];
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
+            float[] rotationMatrix = new float[9];
+            SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
+
+            float[] orientationAngles = new float[3];
+            SensorManager.getOrientation(rotationMatrix, orientationAngles);
+
+            // The orientationAngles array contains the azimuth, pitch, and roll angles
+            _bearing = orientationAngles[0];
+
+            // Update the UI with the new orientation values
             bearView.setText("Bearing: " + _bearing);
         }
     }
