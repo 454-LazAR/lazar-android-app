@@ -529,7 +529,22 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 }
                 healthBar.setProgress(_health);
             }, error -> {
-
+                if (error.networkResponse.statusCode == 400) {
+                    Toast toast = Toast.makeText(getApplicationContext(), "Error pinging server -- Bad Request", Toast.LENGTH_LONG);
+                    toast.show();
+                }
+                else if (error.networkResponse.statusCode == 404) {
+                    Toast toast = Toast.makeText(getApplicationContext(), "Error pinging server -- Game doesn't exist", Toast.LENGTH_LONG);
+                    toast.show();
+                }
+                else if (error.networkResponse.statusCode == 500) {
+                    Toast toast = Toast.makeText(getApplicationContext(), "Error pinging server -- Internal Server Error", Toast.LENGTH_LONG);
+                    toast.show();
+                }
+                // this should never happen
+                else {
+                    throw new RuntimeException("An unknown error occurred while pinging the server.");
+                }
             }
         );
     }
@@ -541,7 +556,23 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                         fireButton.setBackgroundColor(Color.MAGENTA);
                     }
                 }, error -> {
-
+                    if (error.networkResponse.statusCode == 400) {
+                        Toast toast = Toast.makeText(getApplicationContext(), "Error checking hit -- Bad Request", Toast.LENGTH_LONG);
+                        toast.show();
+                    }
+                    else if (error.networkResponse.statusCode == 404) {
+                        Toast toast = Toast.makeText(getApplicationContext(), "Error checking hit -- Game doesn't exist", Toast.LENGTH_LONG);
+                        toast.show();
+                    }
+                    else if (error.networkResponse.statusCode == 500) {
+                        Toast toast = Toast.makeText(getApplicationContext(), "Error checking hit -- Internal Server Error", Toast.LENGTH_LONG);
+                        toast.show();
+                    }
+                    // this should never happen
+                    else {
+                        throw new RuntimeException("An unknown error occurred while requesting a hitcheck from the server.");
+                    }
+                    fireButton.setBackgroundColor(Color.BLACK);
         }) {
             @Override
             public byte[] getBody() {
