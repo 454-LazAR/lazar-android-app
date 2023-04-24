@@ -65,7 +65,7 @@ import kotlin.Pair;
 public class GameActivity extends AppCompatActivity implements SensorEventListener {
 
 
-    private boolean DEBUG = true;
+    private final boolean DEBUG = true;
     private boolean ZOOMED = false;
     private String _userId;
     private String _gameStatus;
@@ -75,11 +75,11 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private float _bearing;
     private SensorManager compassSensorManager;
     private ObjectDetectorHelper objectDetector;
-    private float minConfidence = (float) 0.6;
-    private float zoomRatio = 4.0f;
+    private final float minConfidence = (float) 0.6;
+    private final float zoomRatio = 4.0f;
 
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
-    private int REQUEST_CODE_PERMISSIONS = 1001;
+    private final int REQUEST_CODE_PERMISSIONS = 1001;
     private Handler gameHandler;
     private Runnable gameRunnable;
     private RequestQueue queue;
@@ -535,18 +535,23 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 if (error.networkResponse.statusCode == 400) {
                     Toast toast = Toast.makeText(getApplicationContext(), "Error pinging server -- Bad Request", Toast.LENGTH_LONG);
                     toast.show();
+                    returnHome(null);
                 }
                 else if (error.networkResponse.statusCode == 404) {
                     Toast toast = Toast.makeText(getApplicationContext(), "Error pinging server -- Game doesn't exist", Toast.LENGTH_LONG);
                     toast.show();
+                    returnHome(null);
                 }
                 else if (error.networkResponse.statusCode == 500) {
                     Toast toast = Toast.makeText(getApplicationContext(), "Error pinging server -- Internal Server Error", Toast.LENGTH_LONG);
                     toast.show();
+                    returnHome(null);
                 }
                 // this should never happen
                 else {
-                    throw new RuntimeException("An unknown error occurred while pinging the server.");
+                    Toast toast = Toast.makeText(getApplicationContext(), "An unexpected error occurred while pinging the game server", Toast.LENGTH_LONG);
+                    toast.show();
+                    returnHome(null);
                 }
             }
         );
@@ -562,20 +567,24 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                     if (error.networkResponse.statusCode == 400) {
                         Toast toast = Toast.makeText(getApplicationContext(), "Error checking hit -- Bad Request", Toast.LENGTH_LONG);
                         toast.show();
+                        returnHome(null);
                     }
                     else if (error.networkResponse.statusCode == 404) {
                         Toast toast = Toast.makeText(getApplicationContext(), "Error checking hit -- Game doesn't exist", Toast.LENGTH_LONG);
                         toast.show();
+                        returnHome(null);
                     }
                     else if (error.networkResponse.statusCode == 500) {
                         Toast toast = Toast.makeText(getApplicationContext(), "Error checking hit -- Internal Server Error", Toast.LENGTH_LONG);
                         toast.show();
+                        returnHome(null);
                     }
                     // this should never happen
                     else {
-                        throw new RuntimeException("An unknown error occurred while requesting a hitcheck from the server.");
+                        Toast toast = Toast.makeText(getApplicationContext(), "An unexpected error occurred while getting a hitcheck from the server", Toast.LENGTH_LONG);
+                        toast.show();
+                        returnHome(null);
                     }
-                    fireButton.setBackgroundColor(Color.BLACK);
         }) {
             @Override
             public byte[] getBody() {
@@ -654,6 +663,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      * This method returns the user back to the home screen.
      */
     public void returnHome(View view){
+        stopGamePing();
         Intent homeScreen = new Intent(getApplicationContext(), HomeActivity.class);
         startActivity(homeScreen);
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
