@@ -350,7 +350,9 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         // TO-DO: double check how the orientation is grabbed
         int imageOrientation = mPreviewView.getDeviceRotationForRemoteDisplayMode();
         if (DetectPerson(captureBmp, imageOrientation)) {
-            fireButton.setBackgroundColor(Color.GREEN);
+            if (DEBUG) {
+                fireButton.setBackgroundColor(Color.GREEN);
+            }
             JSONObject body = new JSONObject();
             try {
                 body.put("playerId", _userId);
@@ -560,7 +562,9 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         return new StringRequest(Request.Method.POST, URL + "/check-hit",
                 response -> {
                     if (Boolean.valueOf(response)) {
-                        fireButton.setBackgroundColor(Color.MAGENTA);
+                        if (DEBUG) {
+                            fireButton.setBackgroundColor(Color.MAGENTA);
+                        }
 
                         // temporarily display hitmarker! (hide it after 0.25 seconds)
                         findViewById(R.id.hitmarker).setVisibility(View.VISIBLE);
