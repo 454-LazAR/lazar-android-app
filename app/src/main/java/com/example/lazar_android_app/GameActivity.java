@@ -511,9 +511,6 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         // who cares?
     }
 
-    Target size → 81 members
-    Pledge class size ~20 per year?
-    Pledge semester cost $400!!
     private JsonObjectRequest getGamePingRequest(JSONObject requestBody) {
         return new JsonObjectRequest(Request.Method.POST, URL + "/game-ping", requestBody,
             response -> {
