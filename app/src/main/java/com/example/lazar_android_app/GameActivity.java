@@ -20,6 +20,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -64,7 +65,7 @@ import kotlin.Pair;
 public class GameActivity extends AppCompatActivity implements SensorEventListener {
 
 
-    private boolean DEBUG = true;
+    private final boolean DEBUG = true;
     private boolean ZOOMED = false;
     private String _userId;
     private String _gameStatus;
@@ -74,11 +75,11 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private float _bearing;
     private SensorManager compassSensorManager;
     private ObjectDetectorHelper objectDetector;
-    private float minConfidence = (float) 0.6;
-    private float zoomRatio = 4.0f;
+    private final float minConfidence = (float) 0.6;
+    private final float zoomRatio = 4.0f;
 
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
-    private int REQUEST_CODE_PERMISSIONS = 1001;
+    private final int REQUEST_CODE_PERMISSIONS = 1001;
     private Handler gameHandler;
     private Runnable gameRunnable;
     private RequestQueue queue;
@@ -114,6 +115,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         queue = Volley.newRequestQueue(this);
 
@@ -232,6 +234,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      * Run this to stop the async game ping thread!
      */
     private void stopGamePing() {
+        queue.cancelAll(request -> true);
         stopLocationUpdates();
         gameHandler.removeCallbacks(gameRunnable);
     }
@@ -529,7 +532,27 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 }
                 healthBar.setProgress(_health);
             }, error -> {
-
+                if (error.networkResponse.statusCode == 400) {
+                    Toast toast = Toast.makeText(getApplicationContext(), "Error pinging server -- Bad Request", Toast.LENGTH_LONG);
+                    toast.show();
+                    returnHome(null);
+                }
+                else if (error.networkResponse.statusCode == 404) {
+                    Toast toast = Toast.makeText(getApplicationContext(), "Error pinging server -- Game doesn't exist", Toast.LENGTH_LONG);
+                    toast.show();
+                    returnHome(null);
+                }
+                else if (error.networkResponse.statusCode == 500) {
+                    Toast toast = Toast.makeText(getApplicationContext(), "Error pinging server -- Internal Server Error", Toast.LENGTH_LONG);
+                    toast.show();
+                    returnHome(null);
+                }
+                // this should never happen
+                else {
+                    Toast toast = Toast.makeText(getApplicationContext(), "An unexpected error occurred while pinging the game server", Toast.LENGTH_LONG);
+                    toast.show();
+                    returnHome(null);
+                }
             }
         );
     }
@@ -541,7 +564,27 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                         fireButton.setBackgroundColor(Color.MAGENTA);
                     }
                 }, error -> {
-
+                    if (error.networkResponse.statusCode == 400) {
+                        Toast toast = Toast.makeText(getApplicationContext(), "Error checking hit -- Bad Request", Toast.LENGTH_LONG);
+                        toast.show();
+                        returnHome(null);
+                    }
+                    else if (error.networkResponse.statusCode == 404) {
+                        Toast toast = Toast.makeText(getApplicationContext(), "Error checking hit -- Game doesn't exist", Toast.LENGTH_LONG);
+                        toast.show();
+                        returnHome(null);
+                    }
+                    else if (error.networkResponse.statusCode == 500) {
+                        Toast toast = Toast.makeText(getApplicationContext(), "Error checking hit -- Internal Server Error", Toast.LENGTH_LONG);
+                        toast.show();
+                        returnHome(null);
+                    }
+                    // this should never happen
+                    else {
+                        Toast toast = Toast.makeText(getApplicationContext(), "An unexpected error occurred while getting a hitcheck from the server", Toast.LENGTH_LONG);
+                        toast.show();
+                        returnHome(null);
+                    }
         }) {
             @Override
             public byte[] getBody() {
@@ -560,6 +603,8 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      * TODO: Display stats such as damage dealt, damage taken, eliminations, etc.
      */
     public void victoryScreen(){
+        stopGamePing();
+
         ImageView skyPopup = findViewById(R.id.skyBackground);
 
         skyPopup.setVisibility(View.VISIBLE);
@@ -589,6 +634,8 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      * TODO: Display stats such as damage dealt, damage taken, eliminations, etc.
      */
     public void lossScreen(){
+        stopGamePing();
+
         ImageView stormPopup = findViewById(R.id.stormBackground);
         stormPopup.setVisibility(View.VISIBLE);
 
@@ -616,8 +663,10 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      * This method returns the user back to the home screen.
      */
     public void returnHome(View view){
+        stopGamePing();
         Intent homeScreen = new Intent(getApplicationContext(), HomeActivity.class);
         startActivity(homeScreen);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         finish();
     }
 }
