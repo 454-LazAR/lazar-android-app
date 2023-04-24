@@ -84,6 +84,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private Runnable gameRunnable;
     private RequestQueue queue;
     private FusedLocationProviderClient fusedLocationProviderClient;
+    private Thread humanDetectorThread;
 
     Camera camera;
     CameraControl cameraControl;
@@ -184,6 +185,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
         // Start the async game ping thread
         startGamePing();
+
     }
 
     LocationCallback locationCallback = new LocationCallback() {
@@ -257,6 +259,9 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 // This should never be reached.
             }
         }, ContextCompat.getMainExecutor(this));
+
+        // start the thread that detects if a human is in the crosshairs
+        beginHumanDetection();
     }
 
     /**
@@ -485,6 +490,26 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         return false;
     }
 
+    public void beginHumanDetection() {
+        humanDetectorThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // long running task
+                // grab image from mPreviewView and do human detection on it, bozo
+                Bitmap captureBmp = mPreviewView.getBitmap();
+                // TO-DO: double check how the orientation is grabbed
+                int imageOrientation = mPreviewView.getDeviceRotationForRemoteDisplayMode();
+                if (DetectPerson(captureBmp, imageOrientation)) {
+                    fireButton.setBackgroundColor(Color.GREEN);
+                }
+                else {
+                    fireButton.setBackgroundColor(Color.RED);
+                }
+            }
+        });
+        humanDetectorThread.start();
+    }
+
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
@@ -667,6 +692,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         Intent homeScreen = new Intent(getApplicationContext(), HomeActivity.class);
         startActivity(homeScreen);
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        humanDetectorThread.interrupt();
         finish();
     }
 }
