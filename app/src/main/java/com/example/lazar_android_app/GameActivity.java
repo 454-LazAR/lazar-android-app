@@ -97,7 +97,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onBackPressed() {
-        Toast.makeText(this, "Swiper to previous screen is disabled", Toast.LENGTH_SHORT).show();
+        returnHome(null);
     }
 
     /**
