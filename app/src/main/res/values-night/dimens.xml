@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="healthbar_h">32dp</dimen>
+    <dimen name="trophy_h">240sp</dimen>
+    <dimen name="grave_h">240sp</dimen>
+    <dimen name="debug_capture_h">140dp</dimen>
+</resources>
