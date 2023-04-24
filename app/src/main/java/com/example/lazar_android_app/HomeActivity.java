@@ -2,9 +2,12 @@ package com.example.lazar_android_app;
 
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -24,7 +27,6 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 public class HomeActivity extends AppCompatActivity {
-
     public static final boolean DEBUG = false;
 
     private Handler connHandler;
@@ -32,6 +34,8 @@ public class HomeActivity extends AppCompatActivity {
     private RequestQueue queue;
     protected static final String URL = "https://laz-ar.duckdns.org:8443";
 
+    private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
+    private final int REQUEST_CODE_PERMISSIONS = 1001;
     private StringRequest helloWorldRequest = new StringRequest(Request.Method.GET, URL + "/hello-world",
             response -> {
                 setConnected(true);
@@ -58,6 +62,10 @@ public class HomeActivity extends AppCompatActivity {
             }
         };
 
+        if (!allPermissionsGranted()){
+        ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+
+        }
         // Start the async connection thread
         startConnTask();
     }
@@ -150,6 +158,22 @@ public class HomeActivity extends AppCompatActivity {
             connection.setTextColor(Color.RED);
             connection.setText("Not Connected");
         }
+    }
+
+    /**
+     * Boolean check if all permissions in {@link #REQUIRED_PERMISSIONS} are allowed
+     *
+     * @return true if all permissions in {@link #REQUIRED_PERMISSIONS} are allowed, false
+     * otherwise.
+     */
+    private boolean allPermissionsGranted() {
+
+        for (String permission : REQUIRED_PERMISSIONS) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }
