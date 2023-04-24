@@ -179,7 +179,6 @@ public class StartActivity extends AppCompatActivity {
 
     public void submitNickname(View view) {
         EditText nameField = findViewById(R.id.enterNickname);
-        Button joinButton = findViewById(R.id.joinButton);
         String username = nameField.getText().toString();
 
         hideKeyboard();
@@ -187,19 +186,6 @@ public class StartActivity extends AppCompatActivity {
         if(username == null || username.isEmpty()) {
             Toast.makeText(this, "Please enter a username.", Toast.LENGTH_SHORT).show();
             return;
-        }
-
-        if (!usernames.contains(username)) {
-            usernames.add(username);
-
-            // hide the username entry field and join button
-            nameField.setVisibility(View.GONE);
-            joinButton.setVisibility(View.GONE);
-
-            // notify roster's adapter that
-            // data in list is updated to
-            // update our list view.
-            adapter.notifyDataSetChanged();
         }
 
         JSONObject body = new JSONObject();
@@ -294,6 +280,10 @@ public class StartActivity extends AppCompatActivity {
         return new JsonObjectRequest(Request.Method.POST, URL + "/join", requestBody,
             response -> {
                 try {
+                    EditText nameField = findViewById(R.id.enterNickname);
+                    Button joinButton = findViewById(R.id.joinButton);
+                    nameField.setVisibility(View.GONE);
+                    joinButton.setVisibility(View.GONE);
                     _userId = response.getString("id");
                     _roomCode = response.getString("gameId");
                     startAsJoin();
@@ -321,6 +311,10 @@ public class StartActivity extends AppCompatActivity {
         return new JsonObjectRequest(Request.Method.POST, URL + "/create", requestBody,
             response -> {
                 try {
+                    EditText nameField = findViewById(R.id.enterNickname);
+                    Button joinButton = findViewById(R.id.joinButton);
+                    nameField.setVisibility(View.GONE);
+                    joinButton.setVisibility(View.GONE);
                     _userId = response.getString("id");
                     _roomCode = response.getString("gameId");
                     startAsHost();
