@@ -20,6 +20,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -114,6 +115,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         queue = Volley.newRequestQueue(this);
 
@@ -232,6 +234,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      * Run this to stop the async game ping thread!
      */
     private void stopGamePing() {
+        queue.cancelAll(request -> true);
         stopLocationUpdates();
         gameHandler.removeCallbacks(gameRunnable);
     }
@@ -591,6 +594,8 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      * TODO: Display stats such as damage dealt, damage taken, eliminations, etc.
      */
     public void victoryScreen(){
+        stopGamePing();
+
         ImageView skyPopup = findViewById(R.id.skyBackground);
 
         skyPopup.setVisibility(View.VISIBLE);
@@ -620,6 +625,8 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      * TODO: Display stats such as damage dealt, damage taken, eliminations, etc.
      */
     public void lossScreen(){
+        stopGamePing();
+
         ImageView stormPopup = findViewById(R.id.stormBackground);
         stormPopup.setVisibility(View.VISIBLE);
 
@@ -649,6 +656,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     public void returnHome(View view){
         Intent homeScreen = new Intent(getApplicationContext(), HomeActivity.class);
         startActivity(homeScreen);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         finish();
     }
 }

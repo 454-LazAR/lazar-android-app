@@ -3,6 +3,7 @@ package com.example.lazar_android_app;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -10,6 +11,7 @@ import android.os.Handler;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -37,10 +39,6 @@ public class HomeActivity extends AppCompatActivity {
         setConnected(false);
     });
 
-    @Override
-    public void onBackPressed() {
-        Toast.makeText(this, "Swiper to previous screen is disabled", Toast.LENGTH_SHORT).show();
-    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -117,6 +115,13 @@ public class HomeActivity extends AppCompatActivity {
         EditText roomCodeField = findViewById(R.id.enterRoomCode);
         String code = roomCodeField.getText().toString();
 
+        hideKeyboard();
+
+        if(code == null || code.isEmpty() || code.length() != 6) {
+            Toast.makeText(this, "Your game ID should be a 6-character alphanumeric code.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         Intent startStart = new Intent(getApplicationContext(), StartActivity.class);
 
         startStart.putExtra("mode", "JOIN");
@@ -125,6 +130,13 @@ public class HomeActivity extends AppCompatActivity {
         queue.cancelAll(request -> true);;
         startActivity(startStart);
         finish();
+    }
+
+    private void hideKeyboard() {
+        InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
+        if(getCurrentFocus() != null) {
+            inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+        }
     }
 
     private void setConnected(boolean connected) {
@@ -139,10 +151,5 @@ public class HomeActivity extends AppCompatActivity {
             connection.setText("Not Connected");
         }
     }
-
-//    public void openGame(View view){
-//        Intent startGame = new Intent(getApplicationContext(), GameActivity.class);
-//        startActivity(startGame);
-//    }
 
 }

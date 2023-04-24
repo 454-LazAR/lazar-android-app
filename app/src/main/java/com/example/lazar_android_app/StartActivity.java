@@ -22,6 +22,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.NetworkError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 
@@ -34,6 +35,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 
 public class StartActivity extends AppCompatActivity {
@@ -53,7 +55,7 @@ public class StartActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        Toast.makeText(this, "Swiper to previous screen is disabled", Toast.LENGTH_SHORT).show();
+        returnToHome(null);
     }
 
     @Override
@@ -62,8 +64,8 @@ public class StartActivity extends AppCompatActivity {
 
         queue = Volley.newRequestQueue(this);
 
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_start);
-
         Bundle extras = getIntent().getExtras();
 
         // update room roster
@@ -123,9 +125,11 @@ public class StartActivity extends AppCompatActivity {
         startConnTask();
     }
 
-    public void hideKeyboard() {
+    private void hideKeyboard() {
         InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
-        inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+        if(getCurrentFocus() != null) {
+            inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+        }
     }
 
     /**
@@ -139,6 +143,7 @@ public class StartActivity extends AppCompatActivity {
      * Run this to stop the async connection thread!
      */
     private void stopConnTask() {
+        queue.cancelAll(request -> true);
         connHandler.removeCallbacks(connRunnable);
     }
 
@@ -154,6 +159,7 @@ public class StartActivity extends AppCompatActivity {
      * Run this to stop the lobby ping thread!
      */
     private void stopLobbyPing() {
+        queue.cancelAll(request -> true);
         lobbyHandler.removeCallbacks(lobbyRunnable);
     }
 
@@ -177,6 +183,11 @@ public class StartActivity extends AppCompatActivity {
         String username = nameField.getText().toString();
 
         hideKeyboard();
+
+        if(username == null || username.isEmpty()) {
+            Toast.makeText(this, "Please enter a username.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         if (!usernames.contains(username)) {
             usernames.add(username);
@@ -250,7 +261,6 @@ public class StartActivity extends AppCompatActivity {
     private void startGame() {
         // Stop the running threads!! We're starting a GAME bestie LET'S GOOOOOOO
         stopLobbyPing();
-        queue.cancelAll(request -> true);
 
         // Put extras to transfer data to GameActivity, then start the game activity
         Intent startGame = new Intent(getApplicationContext(), GameActivity.class);
@@ -259,14 +269,18 @@ public class StartActivity extends AppCompatActivity {
         finish();
     }
 
-    private void handleAbandoned() {
-        Toast.makeText(this, "Game was abandoned by the host.", Toast.LENGTH_SHORT).show();
-
+    private void returnToHome(String message) {
+        if(message != null) {
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        }
+        stopConnTask();
         stopLobbyPing();
-        queue.cancelAll(request -> true);;
+
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         Intent homeActivity = new Intent(getApplicationContext(), HomeActivity.class);
         startActivity(homeActivity);
+        finish();
     }
 
     private StringRequest helloWorldRequest = new StringRequest(Request.Method.GET, URL + "/hello-world",
@@ -287,7 +301,18 @@ public class StartActivity extends AppCompatActivity {
                     throw new RuntimeException(e);
                 }
             }, error -> {
-
+                try {
+                    JSONObject errorJson = new JSONObject(new String(error.networkResponse.data));
+                    if (error.networkResponse.statusCode == 400 ||  error.networkResponse.statusCode == 404) {
+                        returnToHome(errorJson.getString("message"));
+                    } else if(error.networkResponse.statusCode == 409) {
+                        Toast.makeText(this, errorJson.getString("message"), Toast.LENGTH_SHORT).show();
+                    } else {
+                        returnToHome("An unknown exception occurred.");
+                    }
+                } catch (JSONException e) {
+                    returnToHome("An unknown exception occurred.");
+                }
             }
         );
     }
@@ -303,7 +328,16 @@ public class StartActivity extends AppCompatActivity {
                     throw new RuntimeException(e);
                 }
             }, error -> {
-                System.out.println("here");
+                try {
+                    JSONObject errorJson = new JSONObject(new String(error.networkResponse.data));
+                    if (error.networkResponse.statusCode == 400) {
+                        returnToHome(errorJson.getString("message"));
+                    } else {
+                        returnToHome("An unknown exception occurred.");
+                    }
+                } catch (JSONException e) {
+                    returnToHome("An unknown exception occurred.");
+                }
             }
         );
     }
@@ -346,12 +380,23 @@ public class StartActivity extends AppCompatActivity {
                 if (_gameStatus.equals("IN_PROGRESS")) {
                     startGame();
                 } else if (_gameStatus.equals("ABANDONED")) {
-                    handleAbandoned();
+                    returnToHome("Game was abandoned by the host.");
+                } else if (_gameStatus.equals("IN_LOBBY")) {
+                    return;
                 } else {
-                    // crash
+                    throw new RuntimeException();
                 }
             }, error -> {
-
+                try {
+                    JSONObject errorJson = new JSONObject(new String(error.networkResponse.data));
+                    if (error.networkResponse.statusCode == 400 ||  error.networkResponse.statusCode == 404) {
+                        returnToHome(errorJson.getString("message"));
+                    } else {
+                        returnToHome("An unknown exception occurred.");
+                    }
+                } catch (JSONException e) {
+                    returnToHome("An unknown exception occurred.");
+                }
             }
         );
     }
@@ -361,11 +406,22 @@ public class StartActivity extends AppCompatActivity {
             response -> {
                 // Success: A 200 will be sent with a boolean indicating that the game was started
                 //          successfully.
-                if (Boolean.valueOf(response)) {
+                if (Boolean.parseBoolean(response)) {
                     startGame();
                 }
             }, error -> {
-                // do nothing?
+                try {
+                    JSONObject errorJson = new JSONObject(new String(error.networkResponse.data));
+                    if (error.networkResponse.statusCode == 400 ||  error.networkResponse.statusCode == 404 || error.networkResponse.statusCode == 409) {
+                        returnToHome(errorJson.getString("message"));
+                    } else if (error.networkResponse.statusCode == 401 || error.networkResponse.statusCode == 403) {
+                        Toast.makeText(this, errorJson.getString("message"), Toast.LENGTH_SHORT).show();
+                    } else {
+                        returnToHome("An unknown exception occurred.");
+                    }
+                } catch (JSONException e) {
+                    returnToHome("An unknown exception occurred.");
+                }
             }
         ) {
             @Override
