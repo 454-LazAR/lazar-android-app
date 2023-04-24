@@ -632,18 +632,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         fireButton.setVisibility(View.GONE);
         exitButton.setVisibility(View.VISIBLE);
 
-        ImageView capture = findViewById(R.id.capture);
-        TextView latView = findViewById(R.id.latView);
-        TextView longView = findViewById(R.id.longView);
-        TextView bearView = findViewById(R.id.bearView);
-        Button zoomButton = findViewById(R.id.zoomButton);
-        capture.setVisibility(View.GONE);
-        latView.setVisibility(View.GONE);
-        longView.setVisibility(View.GONE);
-        bearView.setVisibility(View.GONE);
-        zoomButton.setVisibility(View.GONE);
-
-        //visibilityGoneHelper();
+        visibilityGoneHelper();
     }
 
     /**
@@ -665,17 +654,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         fireButton.setVisibility(View.GONE);
         exitButton.setVisibility(View.VISIBLE);
 
-        ImageView capture = findViewById(R.id.capture);
-        TextView latView = findViewById(R.id.latView);
-        TextView longView = findViewById(R.id.longView);
-        TextView bearView = findViewById(R.id.bearView);
-        Button zoomButton = findViewById(R.id.zoomButton);
-        capture.setVisibility(View.GONE);
-        latView.setVisibility(View.GONE);
-        longView.setVisibility(View.GONE);
-        bearView.setVisibility(View.GONE);
-        zoomButton.setVisibility(View.GONE);
-       // visibilityGoneHelper();
+        visibilityGoneHelper();
     }
 
     private void visibilityGoneHelper(){
