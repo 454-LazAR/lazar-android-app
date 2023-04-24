@@ -10,4 +10,7 @@
     <string name="win_image">Trophy</string>
     <string name="exit_end_screen">E X I T</string>
     <string name="storm_clouds_background">Storm clouds background</string>
+    <string name="FIRE">F I R E</string>
+    <string name="ZOOM">ZOOM</string>
+    <string name="debug_capture_desc">Image with bounding boxes around humans</string>
 </resources>

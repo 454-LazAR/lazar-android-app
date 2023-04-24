@@ -65,7 +65,7 @@ import kotlin.Pair;
 public class GameActivity extends AppCompatActivity implements SensorEventListener {
 
 
-    private final boolean DEBUG = true;
+    private final boolean DEBUG = false;
     private boolean ZOOMED = false;
     private String _userId;
     private String _gameStatus;
@@ -614,19 +614,11 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
         Button exitButton = findViewById(R.id.exitButton);
         Button fireButton = findViewById(R.id.fireButton);
+        exitButton.setText("YOU WIN");
         fireButton.setVisibility(View.GONE);
         exitButton.setVisibility(View.VISIBLE);
 
-        ImageView capture = findViewById(R.id.capture);
-        TextView latView = findViewById(R.id.latView);
-        TextView longView = findViewById(R.id.longView);
-        TextView bearView = findViewById(R.id.bearView);
-        Button zoomButton = findViewById(R.id.zoomButton);
-        capture.setVisibility(View.GONE);
-        latView.setVisibility(View.GONE);
-        longView.setVisibility(View.GONE);
-        bearView.setVisibility(View.GONE);
-        zoomButton.setVisibility(View.GONE);
+        visibilityGoneHelper();
     }
 
     /**
@@ -644,9 +636,14 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
         Button exitButton = findViewById(R.id.exitButton);
         Button fireButton = findViewById(R.id.fireButton);
+        exitButton.setText("YOU LOSE");
         fireButton.setVisibility(View.GONE);
         exitButton.setVisibility(View.VISIBLE);
 
+        visibilityGoneHelper();
+    }
+
+    private void visibilityGoneHelper(){
         ImageView capture = findViewById(R.id.capture);
         TextView latView = findViewById(R.id.latView);
         TextView longView = findViewById(R.id.longView);

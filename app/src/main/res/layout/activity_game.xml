@@ -10,7 +10,7 @@
         android:id="@+id/healthBar"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="32dp"
+        android:layout_height="@dimen/healthbar_h"
         android:min="0"
         android:max="100"
         app:layout_constraintTop_toTopOf="parent"/>
@@ -37,7 +37,7 @@
 
         <ImageView
             android:id="@+id/crosshair"
-            android:layout_width="250dp"
+            android:layout_width="@dimen/crosshair_h"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:contentDescription="@string/capture"
@@ -48,8 +48,8 @@
         android:id="@+id/fireButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="F I R E"
-        android:textSize="60dp"
+        android:text="@string/FIRE"
+        android:textSize="@dimen/FIRE_size"
         android:onClick="fireLazar"
         android:textColor="@color/black"
         app:layout_constraintBottom_toTopOf="@id/zoomButton" />
@@ -58,8 +58,8 @@
         android:id="@+id/zoomButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="ZOOM"
-        android:textSize="60dp"
+        android:text="@string/ZOOM"
+        android:textSize="@dimen/ZOOM_size"
         android:onClick="zoomInCamera"
         android:textColor="@color/black"
         app:layout_constraintBottom_toTopOf="@id/debugData"/>
@@ -72,16 +72,16 @@
         android:visibility="gone"
         android:src="@drawable/sky"
         android:contentDescription="@string/sky_background"/>
-    
+
     <ImageView
         android:id="@+id/winScreen"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/fireButton"
-        app:layout_constraintTop_toTopOf="parent"
-        android:visibility="gone"
+        android:layout_height="@dimen/trophy_h"
+        android:contentDescription="@string/win_image"
         android:src="@drawable/trophy"
-        android:contentDescription="@string/win_image"/>
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/fireButton"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/stormBackground"
@@ -95,24 +95,20 @@
     <ImageView
         android:id="@+id/lossScreen"
         android:layout_width="match_parent"
-        app:layout_constraintBottom_toTopOf="@id/exitButton"
-        app:layout_constraintTop_toTopOf="parent"
-        android:visibility="gone"
-        android:src="@drawable/gravestone"
-        android:layout_height="0dp"
+        android:layout_height="@dimen/grave_h"
         android:contentDescription="@string/loss_image"
-        />
+        android:src="@drawable/gravestone"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/exitButton"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/exitButton"
         android:layout_width="match_parent"
-        app:layout_constraintTop_toTopOf="@+id/fireButton"
         app:layout_constraintBottom_toBottomOf="@+id/fireButton"
-        app:layout_constraintLeft_toLeftOf="@+id/fireButton"
-        app:layout_constraintRight_toRightOf="@+id/fireButton"
         android:layout_height="wrap_content"
         android:text="@string/exit_end_screen"
-        android:textSize="60sp"
+        android:textSize="@dimen/EXIT_size"
         android:onClick="returnHome"
         android:visibility="gone"
         android:textColor="@color/black" />
@@ -120,26 +116,27 @@
     <LinearLayout
         android:id="@+id/debugData"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="@dimen/debug_h"
         app:layout_constraintBottom_toBottomOf="parent"
         android:visibility="gone"
         android:orientation="vertical">
         <ImageView
             android:id="@+id/capture"
             android:layout_width="match_parent"
-            android:layout_height="140dp" />
+            android:layout_height="@dimen/debug_capture_h"
+            android:contentDescription="@string/debug_capture_desc"/>
         <TextView
             android:id="@+id/latView"
             android:layout_width="match_parent"
-            android:layout_height="20dp"/>
+            android:layout_height="@dimen/latitude_h"/>
         <TextView
             android:id="@+id/longView"
             android:layout_width="match_parent"
-            android:layout_height="20dp"/>
+            android:layout_height="@dimen/longitude_h"/>
         <TextView
             android:id="@+id/bearView"
             android:layout_width="match_parent"
-            android:layout_height="20dp"/>
+            android:layout_height="@dimen/bearing_h"/>
     </LinearLayout>
 
 
