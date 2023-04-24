@@ -64,7 +64,6 @@ import kotlin.Pair;
 
 public class GameActivity extends AppCompatActivity implements SensorEventListener {
 
-
     private final boolean DEBUG = true;
     private boolean ZOOMED = false;
     private String _userId;
@@ -512,6 +511,9 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         // who cares?
     }
 
+    Target size → 81 members
+    Pledge class size ~20 per year?
+    Pledge semester cost $400!!
     private JsonObjectRequest getGamePingRequest(JSONObject requestBody) {
         return new JsonObjectRequest(Request.Method.POST, URL + "/game-ping", requestBody,
             response -> {
@@ -562,6 +564,17 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 response -> {
                     if (Boolean.valueOf(response)) {
                         fireButton.setBackgroundColor(Color.MAGENTA);
+
+                        // temporarily display hitmarker! (hide it after 0.25 seconds)
+                        findViewById(R.id.hitmarker).setVisibility(View.VISIBLE);
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                // Do something here after waiting for 0.25 seconds
+                                findViewById(R.id.hitmarker).setVisibility(View.GONE);
+                            }
+                        }, 250); // 250 milliseconds = 0.25 seconds
+
                     }
                 }, error -> {
                     if (error.networkResponse.statusCode == 400) {
