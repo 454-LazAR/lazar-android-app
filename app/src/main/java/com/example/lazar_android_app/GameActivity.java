@@ -65,7 +65,9 @@ import kotlin.Pair;
 public class GameActivity extends AppCompatActivity implements SensorEventListener {
 
 
-    private final boolean DEBUG = true;
+    private final boolean DEBUG = false;
+    private final boolean ENABLE_DETECTION_INDICATOR = true;
+    private final int DETECTION_INDICATOR_DELAY = 100;
     private boolean ZOOMED = false;
     private String _userId;
     private String _gameStatus;
@@ -81,7 +83,9 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
     private final int REQUEST_CODE_PERMISSIONS = 1001;
     private Handler gameHandler;
+    private Handler detectHandler;
     private Runnable gameRunnable;
+    private Runnable detectRunnable;
     private RequestQueue queue;
     private FusedLocationProviderClient fusedLocationProviderClient;
     private Thread humanDetectorThread;
@@ -186,6 +190,31 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         // Start the async game ping thread
         startGamePing();
 
+        // startup human detection indicator if enabled -- beware of hot phone
+        if (ENABLE_DETECTION_INDICATOR) {
+            detectHandler = new Handler();
+            detectRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        beginHumanDetection();
+                        gameHandler.postDelayed(this, DETECTION_INDICATOR_DELAY); // Schedule the task to run again after 1 second
+                        return;
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                        detectHandler.removeCallbacks(detectRunnable);
+                        return;
+                    }
+
+                    //gameHandler.postDelayed(this, DETECTION_INDICATOR_DELAY); // Schedule the task to run again after 1 second
+                }
+            };
+
+            startDetectWrapper();
+        }
+
+
     }
 
     LocationCallback locationCallback = new LocationCallback() {
@@ -233,12 +262,41 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     }
 
     /**
+     * Starts detect person thread
+     */
+    private void startDetect() {
+        detectHandler.post(detectRunnable);
+    }
+
+    /**
+     * Wrapper method for startDetect()
+     */
+    private void startDetectWrapper() {
+
+        // delay the detection by 1 second to allow for camera and object detector to finish setup
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                startDetect();
+            }
+        }, 1000);
+    }
+
+    /**
      * Run this to stop the async game ping thread!
      */
     private void stopGamePing() {
         queue.cancelAll(request -> true);
         stopLocationUpdates();
         gameHandler.removeCallbacks(gameRunnable);
+    }
+
+    /**
+     * Run this to stop the async game ping thread!
+     */
+    private void stopDetection() {
+        //queue.cancelAll(request -> true);
+        detectHandler.removeCallbacks(detectRunnable);
     }
 
     /**
@@ -260,8 +318,6 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
             }
         }, ContextCompat.getMainExecutor(this));
 
-        // start the thread that detects if a human is in the crosshairs
-        beginHumanDetection();
     }
 
     /**
@@ -491,23 +547,18 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     }
 
     public void beginHumanDetection() {
-        humanDetectorThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                // long running task
-                // grab image from mPreviewView and do human detection on it, bozo
-                Bitmap captureBmp = mPreviewView.getBitmap();
-                // TO-DO: double check how the orientation is grabbed
-                int imageOrientation = mPreviewView.getDeviceRotationForRemoteDisplayMode();
-                if (DetectPerson(captureBmp, imageOrientation)) {
-                    fireButton.setBackgroundColor(Color.GREEN);
-                }
-                else {
-                    fireButton.setBackgroundColor(Color.RED);
-                }
+
+            // grab image from mPreviewView and do human detection on it, bozo
+            Bitmap captureBmp = mPreviewView.getBitmap();
+            // TO-DO: double check how the orientation is grabbed
+            int imageOrientation = mPreviewView.getDeviceRotationForRemoteDisplayMode();
+            if (DetectPerson(captureBmp, imageOrientation)) {
+                fireButton.setBackgroundColor(Color.GREEN);
             }
-        });
-        humanDetectorThread.start();
+            else {
+                fireButton.setBackgroundColor(Color.RED);
+            }
+
     }
 
     @Override
@@ -629,6 +680,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      */
     public void victoryScreen(){
         stopGamePing();
+        stopDetection();
 
         ImageView skyPopup = findViewById(R.id.skyBackground);
 
@@ -660,6 +712,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      */
     public void lossScreen(){
         stopGamePing();
+        stopDetection();
 
         ImageView stormPopup = findViewById(R.id.stormBackground);
         stormPopup.setVisibility(View.VISIBLE);
@@ -689,10 +742,11 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      */
     public void returnHome(View view){
         stopGamePing();
+        //stopDetection();
+
         Intent homeScreen = new Intent(getApplicationContext(), HomeActivity.class);
         startActivity(homeScreen);
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        humanDetectorThread.interrupt();
         finish();
     }
 }
