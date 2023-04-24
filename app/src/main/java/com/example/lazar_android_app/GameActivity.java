@@ -42,6 +42,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 
+import com.android.volley.Network;
+import com.android.volley.NetworkError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
@@ -516,6 +518,12 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private JsonObjectRequest getGamePingRequest(JSONObject requestBody) {
         return new JsonObjectRequest(Request.Method.POST, URL + "/game-ping", requestBody,
             response -> {
+                boolean isInactive = false;
+                try {
+                    isInactive = response.getBoolean("isInactive");
+                } catch (JSONException e) {
+                    // If this error happens, it just means that the game is still active
+                }
                 try {
                     _gameStatus = response.getString("gameStatus");
                     _health = response.getInt("health");
@@ -528,12 +536,23 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                         // GAME OVER
                         lossScreen();
                     }
+                    else if (isInactive) {
+                        // Kick user out
+                        Toast toast = Toast.makeText(getApplicationContext(), "You have been disconnected for inactivity!", Toast.LENGTH_LONG);
+                        toast.show();
+                        returnHome(null);
+                    }
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
                 healthBar.setProgress(_health);
             }, error -> {
-                if (error.networkResponse.statusCode == 400) {
+                // user disconnected
+                if (error instanceof NetworkError) {
+                    Toast toast = Toast.makeText(getApplicationContext(), "You are disconnected from the Internet!", Toast.LENGTH_SHORT);
+                    toast.show();
+                }
+                else if (error.networkResponse.statusCode == 400) {
                     Toast toast = Toast.makeText(getApplicationContext(), "Error pinging server -- Bad Request", Toast.LENGTH_LONG);
                     toast.show();
                     returnHome(null);
@@ -578,7 +597,12 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
                     }
                 }, error -> {
-                    if (error.networkResponse.statusCode == 400) {
+                    // user disconnected
+                    if (error instanceof NetworkError) {
+                        Toast toast = Toast.makeText(getApplicationContext(), "You are disconnected from the Internet!", Toast.LENGTH_SHORT);
+                        toast.show();
+                    }
+                    else if (error.networkResponse.statusCode == 400) {
                         Toast toast = Toast.makeText(getApplicationContext(), "Error checking hit -- Bad Request", Toast.LENGTH_LONG);
                         toast.show();
                         returnHome(null);
