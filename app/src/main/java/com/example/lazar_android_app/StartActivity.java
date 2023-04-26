@@ -2,6 +2,7 @@ package com.example.lazar_android_app;
 
 import static com.example.lazar_android_app.HomeActivity.URL;
 import static com.example.lazar_android_app.HomeActivity.MC_MODE;
+import static com.example.lazar_android_app.HomeActivity.SOUND;
 
 import androidx.appcompat.app.AppCompatActivity;
 import android.app.Activity;
@@ -349,8 +350,13 @@ public class StartActivity extends AppCompatActivity {
                     // update "usernames" ArrayList and refresh roster
                     if (usernames.size() != new_usernames.size()) {
                         // one or more new players has joined the lobby
-                        MediaPlayer mp = MediaPlayer.create(this, R.raw.discord_join);
-                        mp.start();
+
+                        tryPlaySound(0);
+
+                        if (SOUND) {
+                            MediaPlayer mp = MediaPlayer.create(this, R.raw.discord_join);
+                            mp.start();
+                        }
                     }
                     usernames = new_usernames;
                     Collections.sort(usernames);
@@ -430,6 +436,13 @@ public class StartActivity extends AppCompatActivity {
                 return "application/json";
             }
         };
+    }
+
+    public void tryPlaySound(int soundId) {
+        if (SOUND) {
+            MediaPlayer mp = MediaPlayer.create(this, soundId);
+            mp.start();
+        }
     }
 
 }

@@ -33,6 +33,7 @@ public class HomeActivity extends AppCompatActivity {
     private RequestQueue queue;
     protected static final String URL = "https://laz-ar.duckdns.org:8443";
     protected static final Boolean MC_MODE = true;
+    protected static final Boolean SOUND = true;
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
     private final int REQUEST_CODE_PERMISSIONS = 1001;
     private final StringRequest helloWorldRequest = new StringRequest(Request.Method.GET, URL + "/hello-world",
@@ -148,10 +149,7 @@ public class HomeActivity extends AppCompatActivity {
         TextView connection = findViewById(R.id.serverConnection);
 
         // Uncomment if u want a noise every time the connection is updated (for debugging)
-//        MediaPlayer mp = MediaPlayer.create(this,
-//                MC_MODE ? R.raw.mc_villagerhmm : R.raw.mc_villagerhmm
-//        );
-//        mp.start();
+//        tryPlaySound(MC_MODE ? R.raw.mc_villagerhmm : R.raw.mc_villagerhmm)
 
         if (connected) {
             connection.setTextColor(Color.GREEN);
@@ -177,6 +175,13 @@ public class HomeActivity extends AppCompatActivity {
             }
         }
         return true;
+    }
+
+    public void tryPlaySound(int soundId) {
+        if (SOUND) {
+            MediaPlayer mp = MediaPlayer.create(this, soundId);
+            mp.start();
+        }
     }
 
 }

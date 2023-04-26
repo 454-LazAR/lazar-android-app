@@ -2,6 +2,7 @@ package com.example.lazar_android_app;
 
 import static com.example.lazar_android_app.HomeActivity.URL;
 import static com.example.lazar_android_app.HomeActivity.MC_MODE;
+import static com.example.lazar_android_app.HomeActivity.SOUND;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -159,10 +160,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         }
 
         // Play game start noise
-        MediaPlayer mp = MediaPlayer.create(this,
-                MC_MODE ? R.raw.mc_cave_noise : R.raw.mc_cave_noise
-        );
-        mp.start();
+        tryPlaySound(MC_MODE ? R.raw.mc_cave_noise : R.raw.mc_cave_noise);
 
         // Define async thread to run game pings
         gameHandler = new Handler();
@@ -354,10 +352,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      */
     public void fireLazar(View view) {
         // laser noise
-        MediaPlayer mp = MediaPlayer.create(this,
-                MC_MODE ? R.raw.mc_shoot : R.raw.shoot
-        );
-        mp.start();
+        tryPlaySound(MC_MODE ? R.raw.mc_shoot : R.raw.shoot);
 
         // grab image from mPreviewView and do human detection on it, bozo
         Bitmap captureBmp = mPreviewView.getBitmap();
@@ -557,10 +552,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
                 // user has taken damage!
                 if (_health < healthBar.getProgress()) {
-                    MediaPlayer mp = MediaPlayer.create(this,
-                            MC_MODE ? R.raw.mc_get_hurt : R.raw.get_hurt
-                    );
-                    mp.start();
+                    tryPlaySound(MC_MODE ? R.raw.mc_get_hurt : R.raw.get_hurt);
                 }
 
                 healthBar.setProgress(_health);
@@ -600,10 +592,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 response -> {
                     if (Boolean.parseBoolean(response)) {
                         // Play "on hit" sound
-                        MediaPlayer mp = MediaPlayer.create(this,
-                                MC_MODE ? R.raw.mc_on_hit : R.raw.on_hit
-                        );
-                        mp.start();
+                        tryPlaySound(MC_MODE ? R.raw.mc_on_hit : R.raw.on_hit);
 
                         if (DEBUG) {
                             fireButton.setBackgroundColor(Color.MAGENTA);
@@ -673,11 +662,8 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         ImageView victoryPopup = findViewById(R.id.winScreen);
         victoryPopup.setVisibility(View.VISIBLE);
 
-        // play victory noise
-        MediaPlayer mp = MediaPlayer.create(this,
-                MC_MODE ? R.raw.mc_u_win : R.raw.mc_u_win
-        );
-        mp.start();
+        // play win noise
+        tryPlaySound(MC_MODE ? R.raw.mc_u_win : R.raw.mc_u_win);
 
         gameOverVisibilityHelper(true);
     }
@@ -695,11 +681,8 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         ImageView lossPopup = findViewById(R.id.lossScreen);
         lossPopup.setVisibility(View.VISIBLE);
 
-        // play loss noise
-        MediaPlayer mp = MediaPlayer.create(this,
-                MC_MODE ? R.raw.mc_u_ded : R.raw.mc_u_ded
-        );
-        mp.start();
+        // play lose noise
+        tryPlaySound(MC_MODE ? R.raw.mc_u_ded : R.raw.mc_u_ded);
 
         gameOverVisibilityHelper(false);
     }
@@ -736,5 +719,12 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         startActivity(homeScreen);
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         finish();
+    }
+
+    public void tryPlaySound(int soundId) {
+        if (SOUND) {
+            MediaPlayer mp = MediaPlayer.create(this, soundId);
+            mp.start();
+        }
     }
 }
