@@ -67,7 +67,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
     private final boolean DEBUG = false;
     private final boolean ENABLE_DETECTION_INDICATOR = true;
-    private final int DETECTION_INDICATOR_DELAY = 100;
+    private final int DETECTION_INDICATOR_DELAY = 200;
     private boolean ZOOMED = false;
     private String _userId;
     private String _gameStatus;
@@ -88,7 +88,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private Runnable detectRunnable;
     private RequestQueue queue;
     private FusedLocationProviderClient fusedLocationProviderClient;
-    private Thread humanDetectorThread;
+    private boolean stopHumanDetection = false;
 
     Camera camera;
     CameraControl cameraControl;
@@ -194,20 +194,25 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         if (ENABLE_DETECTION_INDICATOR) {
             detectHandler = new Handler();
             detectRunnable = new Runnable() {
+
                 @Override
                 public void run() {
-                    try {
-                        beginHumanDetection();
-                        gameHandler.postDelayed(this, DETECTION_INDICATOR_DELAY); // Schedule the task to run again after 1 second
-                        return;
+                    if (!stopHumanDetection) {
+                        try {
+                            beginHumanDetection();
+                            gameHandler.postDelayed(this, DETECTION_INDICATOR_DELAY); // Schedule the task to run again after 1 second
+                            return;
+                        }
+                        catch (Exception e) {
+                            e.printStackTrace();
+                            detectHandler.removeCallbacks(detectRunnable);
+                            return;
+                        }
                     }
-                    catch (Exception e) {
-                        e.printStackTrace();
-                        detectHandler.removeCallbacks(detectRunnable);
+                    else {
                         return;
                     }
 
-                    //gameHandler.postDelayed(this, DETECTION_INDICATOR_DELAY); // Schedule the task to run again after 1 second
                 }
             };
 
@@ -296,6 +301,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      */
     private void stopDetection() {
         //queue.cancelAll(request -> true);
+        stopHumanDetection = true;
         detectHandler.removeCallbacks(detectRunnable);
     }
 
