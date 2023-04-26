@@ -680,7 +680,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         );
         mp.start();
 
-        gameOverVisibilityHelper();
+        gameOverVisibilityHelper(true);
     }
 
     /**
@@ -702,10 +702,15 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         );
         mp.start();
 
-        gameOverVisibilityHelper();
+        gameOverVisibilityHelper(false);
     }
 
-    private void gameOverVisibilityHelper(){
+    /**
+     * Helps hide and show some elements during the game over sequence.
+     *
+     * @param win True sets exit button to say "YOU WIN" and false sets it to say "R.I.P"
+     */
+    private void gameOverVisibilityHelper(Boolean win){
         Button exitButton = findViewById(R.id.exitButton);
         Button fireButton = findViewById(R.id.fireButton);
         ImageView capture = findViewById(R.id.capture);
@@ -713,7 +718,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         TextView longView = findViewById(R.id.longView);
         TextView bearView = findViewById(R.id.bearView);
         Button zoomButton = findViewById(R.id.zoomButton);
-        exitButton.setText("YOU WIN");
+        exitButton.setText(win ? "YOU WIN" : "R.I.P.");
         fireButton.setVisibility(View.GONE);
         exitButton.setVisibility(View.VISIBLE);
         capture.setVisibility(View.GONE);
