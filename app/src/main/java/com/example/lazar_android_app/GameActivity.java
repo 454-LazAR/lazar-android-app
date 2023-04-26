@@ -93,6 +93,8 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private FusedLocationProviderClient fusedLocationProviderClient;
     private boolean stopHumanDetection = false;
 
+    private static int readyToFire = 2;
+
     Camera camera;
     CameraControl cameraControl;
     PreviewView mPreviewView;
@@ -428,7 +430,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         Bitmap captureBmp = mPreviewView.getBitmap();
         // TO-DO: double check how the orientation is grabbed
         int imageOrientation = mPreviewView.getDeviceRotationForRemoteDisplayMode();
-        if (DetectPerson(captureBmp, imageOrientation)) {
+        if (readyToFire == 0 && DetectPerson(captureBmp, imageOrientation)) {
             if (DEBUG) {
                 fireButton.setBackgroundColor(Color.GREEN);
             }
@@ -613,6 +615,9 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                     // If this error happens, it just means that the game is still active
                 }
                 try {
+                    if(readyToFire != 0) {
+                        readyToFire--;
+                    }
                     _gameStatus = response.getString("gameStatus");
                     _health = response.getInt("health");
 
