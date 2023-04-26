@@ -349,7 +349,7 @@ public class StartActivity extends AppCompatActivity {
                     if (usernames.size() != new_usernames.size()) {
                         // one or more new players has joined the lobby
 
-                        tryPlaySound(0);
+                        tryPlaySound(R.raw.d_discord_join);
 
                         if (SOUND) {
                             MediaPlayer mp = MediaPlayer.create(this, R.raw.d_discord_join);
