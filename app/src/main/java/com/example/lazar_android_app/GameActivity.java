@@ -68,7 +68,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
 
     private final boolean DEBUG = false;
-    private final boolean ENABLE_DETECTION_INDICATOR = true;
+    private final boolean ENABLE_DETECTION_INDICATOR = false;
     private final int DETECTION_INDICATOR_DELAY = 200;
     private boolean ZOOMED = false;
     private String _userId;
