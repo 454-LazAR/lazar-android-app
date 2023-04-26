@@ -9,6 +9,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
@@ -33,15 +34,17 @@ public class HomeActivity extends AppCompatActivity {
     private Runnable connRunnable;
     private RequestQueue queue;
     protected static final String URL = "https://laz-ar.duckdns.org:8443";
-
+    protected static final Boolean MC_MODE = true;
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
     private final int REQUEST_CODE_PERMISSIONS = 1001;
     private StringRequest helloWorldRequest = new StringRequest(Request.Method.GET, URL + "/hello-world",
-            response -> {
-                setConnected(true);
-            }, error -> {
-        setConnected(false);
-    });
+        response -> {
+            setConnected(true);
+        },
+        error -> {
+            setConnected(false);
+        }
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -149,6 +152,12 @@ public class HomeActivity extends AppCompatActivity {
 
     private void setConnected(boolean connected) {
         TextView connection = findViewById(R.id.serverConnection);
+
+        // Uncomment if u want a noise every time the connection is updated (for debugging)
+//        MediaPlayer mp = MediaPlayer.create(this,
+//                MC_MODE ? R.raw.mc_villagerhmm : R.raw.mc_villagerhmm
+//        );
+//        mp.start();
 
         if (connected) {
             connection.setTextColor(Color.GREEN);

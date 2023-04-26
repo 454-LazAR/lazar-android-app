@@ -2,12 +2,14 @@ package com.example.lazar_android_app;
 
 
 import static com.example.lazar_android_app.HomeActivity.URL;
+import static com.example.lazar_android_app.HomeActivity.MC_MODE;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
@@ -353,6 +355,11 @@ public class StartActivity extends AppCompatActivity {
                     }
 
                     // update "usernames" ArrayList and refresh roster
+                    if (usernames.size() != new_usernames.size()) {
+                        // one or more new players has joined the lobby
+                        MediaPlayer mp = MediaPlayer.create(this, R.raw.discord_join);
+                        mp.start();
+                    }
                     usernames = new_usernames;
                     Collections.sort(usernames);
                     adapter.clear();
