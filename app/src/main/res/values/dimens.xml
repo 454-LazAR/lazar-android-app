@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="healthbar_h">32dp</dimen>
+    <dimen name="FIRE_size">60sp</dimen>
+    <dimen name="ZOOM_size">60sp</dimen>
+    <dimen name="debug_h">200dp</dimen>
+    <dimen name="crosshair_h">250dp</dimen>
+    <dimen name="trophy_h">240sp</dimen>
+    <dimen name="grave_h">240sp</dimen>
+    <dimen name="EXIT_size">60sp</dimen>
+    <dimen name="debug_capture_h">140dp</dimen>
+    <dimen name="latitude_h">20dp</dimen>
+    <dimen name="longitude_h">20dp</dimen>
+    <dimen name="bearing_h">20dp</dimen>
+</resources>

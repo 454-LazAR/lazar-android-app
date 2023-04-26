@@ -42,6 +42,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 
+import com.android.volley.Network;
+import com.android.volley.NetworkError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
@@ -102,7 +104,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onBackPressed() {
-        Toast.makeText(this, "Swiper to previous screen is disabled", Toast.LENGTH_SHORT).show();
+        returnHome(null);
     }
 
     /**
@@ -418,7 +420,9 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         // TO-DO: double check how the orientation is grabbed
         int imageOrientation = mPreviewView.getDeviceRotationForRemoteDisplayMode();
         if (DetectPerson(captureBmp, imageOrientation)) {
-            fireButton.setBackgroundColor(Color.GREEN);
+            if (DEBUG) {
+                fireButton.setBackgroundColor(Color.GREEN);
+            }
             JSONObject body = new JSONObject();
             try {
                 body.put("playerId", _userId);
@@ -597,6 +601,12 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private JsonObjectRequest getGamePingRequest(JSONObject requestBody) {
         return new JsonObjectRequest(Request.Method.POST, URL + "/game-ping", requestBody,
             response -> {
+                boolean isInactive = false;
+                try {
+                    isInactive = response.getBoolean("isInactive");
+                } catch (JSONException e) {
+                    // If this error happens, it just means that the game is still active
+                }
                 try {
                     _gameStatus = response.getString("gameStatus");
                     _health = response.getInt("health");
@@ -609,12 +619,23 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                         // GAME OVER
                         lossScreen();
                     }
+                    else if (isInactive) {
+                        // Kick user out
+                        Toast toast = Toast.makeText(getApplicationContext(), "You have been disconnected for inactivity!", Toast.LENGTH_LONG);
+                        toast.show();
+                        returnHome(null);
+                    }
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
                 healthBar.setProgress(_health);
             }, error -> {
-                if (error.networkResponse.statusCode == 400) {
+                // user disconnected
+                if (error instanceof NetworkError) {
+                    Toast toast = Toast.makeText(getApplicationContext(), "You are disconnected from the Internet!", Toast.LENGTH_SHORT);
+                    toast.show();
+                }
+                else if (error.networkResponse.statusCode == 400) {
                     Toast toast = Toast.makeText(getApplicationContext(), "Error pinging server -- Bad Request", Toast.LENGTH_LONG);
                     toast.show();
                     returnHome(null);
@@ -643,10 +664,28 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         return new StringRequest(Request.Method.POST, URL + "/check-hit",
                 response -> {
                     if (Boolean.valueOf(response)) {
-                        fireButton.setBackgroundColor(Color.MAGENTA);
+                        if (DEBUG) {
+                            fireButton.setBackgroundColor(Color.MAGENTA);
+                        }
+
+                        // temporarily display hitmarker! (hide it after 0.25 seconds)
+                        findViewById(R.id.hitmarker).setVisibility(View.VISIBLE);
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                // Do something here after waiting for 0.25 seconds
+                                findViewById(R.id.hitmarker).setVisibility(View.GONE);
+                            }
+                        }, 250); // 250 milliseconds = 0.25 seconds
+
                     }
                 }, error -> {
-                    if (error.networkResponse.statusCode == 400) {
+                    // user disconnected
+                    if (error instanceof NetworkError) {
+                        Toast toast = Toast.makeText(getApplicationContext(), "You are disconnected from the Internet!", Toast.LENGTH_SHORT);
+                        toast.show();
+                    }
+                    else if (error.networkResponse.statusCode == 400) {
                         Toast toast = Toast.makeText(getApplicationContext(), "Error checking hit -- Bad Request", Toast.LENGTH_LONG);
                         toast.show();
                         returnHome(null);
@@ -697,19 +736,11 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
         Button exitButton = findViewById(R.id.exitButton);
         Button fireButton = findViewById(R.id.fireButton);
+        exitButton.setText("YOU WIN");
         fireButton.setVisibility(View.GONE);
         exitButton.setVisibility(View.VISIBLE);
 
-        ImageView capture = findViewById(R.id.capture);
-        TextView latView = findViewById(R.id.latView);
-        TextView longView = findViewById(R.id.longView);
-        TextView bearView = findViewById(R.id.bearView);
-        Button zoomButton = findViewById(R.id.zoomButton);
-        capture.setVisibility(View.GONE);
-        latView.setVisibility(View.GONE);
-        longView.setVisibility(View.GONE);
-        bearView.setVisibility(View.GONE);
-        zoomButton.setVisibility(View.GONE);
+        visibilityGoneHelper();
     }
 
     /**
@@ -728,9 +759,14 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
         Button exitButton = findViewById(R.id.exitButton);
         Button fireButton = findViewById(R.id.fireButton);
+        exitButton.setText("YOU LOSE");
         fireButton.setVisibility(View.GONE);
         exitButton.setVisibility(View.VISIBLE);
 
+        visibilityGoneHelper();
+    }
+
+    private void visibilityGoneHelper(){
         ImageView capture = findViewById(R.id.capture);
         TextView latView = findViewById(R.id.latView);
         TextView longView = findViewById(R.id.longView);
