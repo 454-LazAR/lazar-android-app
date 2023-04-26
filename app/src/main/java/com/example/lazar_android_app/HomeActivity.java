@@ -27,13 +27,14 @@ import com.android.volley.toolbox.Volley;
 
 public class HomeActivity extends AppCompatActivity {
     public static final boolean DEBUG = false;
+    protected static Boolean SOUND = true;
+    protected static Boolean MC_MODE = false;
+    protected static Boolean HIGHLIGHTER = false;
 
     private Handler connHandler;
     private Runnable connRunnable;
     private RequestQueue queue;
     protected static final String URL = "https://laz-ar.duckdns.org:8443";
-    protected static final Boolean MC_MODE = true;
-    protected static final Boolean SOUND = true;
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
     private final int REQUEST_CODE_PERMISSIONS = 1001;
     private final StringRequest helloWorldRequest = new StringRequest(Request.Method.GET, URL + "/hello-world",
@@ -59,6 +60,14 @@ public class HomeActivity extends AppCompatActivity {
                 connHandler.postDelayed(this, 2000); // Schedule the task to run again after 2 seconds
             }
         };
+
+        // set settings button colors
+        Button soundSetting = findViewById(R.id.sounds);
+        soundSetting.setBackgroundColor(Color.GREEN);
+        Button mcSetting = findViewById(R.id.mcMode);
+        mcSetting.setBackgroundColor(Color.RED);
+        Button highlightButton = findViewById(R.id.highlighter);
+        highlightButton.setBackgroundColor(Color.RED);
 
         if (!allPermissionsGranted()){
         ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
@@ -184,4 +193,22 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
+    public void toggleSounds(View view) {
+        SOUND = !SOUND;
+
+        Button soundSetting = findViewById(R.id.sounds);
+        soundSetting.setBackgroundColor(SOUND ? Color.GREEN : Color.RED);
+    }
+    public void toggleMcMode(View view) {
+        MC_MODE = !MC_MODE;
+
+        Button mcSetting = findViewById(R.id.mcMode);
+        mcSetting.setBackgroundColor(MC_MODE ? Color.GREEN : Color.RED);
+    }
+    public void toggleHighlighter(View view) {
+        HIGHLIGHTER = !HIGHLIGHTER;
+
+        Button highlightButton = findViewById(R.id.highlighter);
+        highlightButton.setBackgroundColor(HIGHLIGHTER ? Color.GREEN : Color.RED);
+    }
 }

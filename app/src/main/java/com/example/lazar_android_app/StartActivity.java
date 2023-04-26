@@ -2,6 +2,8 @@ package com.example.lazar_android_app;
 
 import static com.example.lazar_android_app.HomeActivity.URL;
 import static com.example.lazar_android_app.HomeActivity.SOUND;
+import static com.example.lazar_android_app.HomeActivity.MC_MODE;
+import static com.example.lazar_android_app.HomeActivity.HIGHLIGHTER;
 
 import androidx.appcompat.app.AppCompatActivity;
 import android.app.Activity;

@@ -35,13 +35,15 @@
             android:id="@+id/enterNickname"
             android:inputType="text"
             android:hint="Enter Nickname"
-            style="@style/ButtonHome" />
+            style="@style/ButtonHome"
+            android:backgroundTint="@color/dark_gray"/>
         <Button
             android:id="@+id/joinButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:onClick="submitNickname"
             style="@style/ButtonHome"
+            android:backgroundTint="@color/dark_gray"
             android:text="JOIN" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -60,6 +62,7 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 android:onClick="hostTryStart"
                 style="@style/ButtonHome"
+                android:backgroundTint="@color/dark_gray"
                 android:text="START GAME"
                 android:visibility="gone"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
