@@ -269,7 +269,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     }
 
     /**
-     * Starts detect person thread
+     * Starts the async detect person thread
      */
     private void startDetect() {
         detectHandler.post(detectRunnable);
@@ -299,7 +299,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     }
 
     /**
-     * Run this to stop the async game ping thread!
+     * Run this to stop the async detect person thread
      */
     private void stopDetection() {
         //queue.cancelAll(request -> true);
@@ -560,7 +560,6 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
             // grab image from mPreviewView and do human detection on it, bozo
             Bitmap captureBmp = mPreviewView.getBitmap();
-            // TO-DO: double check how the orientation is grabbed
             int imageOrientation = mPreviewView.getDeviceRotationForRemoteDisplayMode();
             if (DetectPerson(captureBmp, imageOrientation)) {
                 fireButton.setBackgroundColor(Color.GREEN);
