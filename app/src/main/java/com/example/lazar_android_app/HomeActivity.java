@@ -13,8 +13,6 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -37,13 +35,9 @@ public class HomeActivity extends AppCompatActivity {
     protected static final Boolean MC_MODE = true;
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
     private final int REQUEST_CODE_PERMISSIONS = 1001;
-    private StringRequest helloWorldRequest = new StringRequest(Request.Method.GET, URL + "/hello-world",
-        response -> {
-            setConnected(true);
-        },
-        error -> {
-            setConnected(false);
-        }
+    private final StringRequest helloWorldRequest = new StringRequest(Request.Method.GET, URL + "/hello-world",
+        response -> setConnected(true),
+        error -> setConnected(false)
     );
 
     @Override
@@ -98,7 +92,7 @@ public class HomeActivity extends AppCompatActivity {
             Intent startStart = new Intent(getApplicationContext(), StartActivity.class);
             startStart.putExtra("mode", "HOST");
             stopConnTask();
-            queue.cancelAll(request -> true);;
+            queue.cancelAll(request -> true);
             startActivity(startStart);
             finish();
         }
@@ -128,7 +122,7 @@ public class HomeActivity extends AppCompatActivity {
 
         hideKeyboard();
 
-        if(code == null || code.isEmpty() || code.length() != 6) {
+        if(code.length() != 6) {
             Toast.makeText(this, "Your game ID should be a 6-character alphanumeric code.", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -138,7 +132,7 @@ public class HomeActivity extends AppCompatActivity {
         startStart.putExtra("mode", "JOIN");
         startStart.putExtra("roomCode", code);
         stopConnTask();
-        queue.cancelAll(request -> true);;
+        queue.cancelAll(request -> true);
         startActivity(startStart);
         finish();
     }

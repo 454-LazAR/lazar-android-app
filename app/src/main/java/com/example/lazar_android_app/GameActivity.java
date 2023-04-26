@@ -42,7 +42,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.lifecycle.LifecycleOwner;
 
 import com.android.volley.NetworkError;
 import com.android.volley.Request;
@@ -351,7 +350,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     /**
      * Onclick handler for the FIRE button.
      *
-     * @param view
+     * @param view The view
      */
     public void fireLazar(View view) {
         // laser noise
@@ -388,7 +387,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     /**
      * Onclick handler for the ZOOM button.
      *
-     * @param view the view
+     * @param view The view
      */
     public void zoomInCamera(View view) {
         // zoom in OR zoom out the camera
@@ -599,7 +598,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private StringRequest getCheckHitRequest(JSONObject requestBody) {
         return new StringRequest(Request.Method.POST, URL + "/check-hit",
                 response -> {
-                    if (Boolean.valueOf(response)) {
+                    if (Boolean.parseBoolean(response)) {
                         // Play "on hit" sound
                         MediaPlayer mp = MediaPlayer.create(this,
                                 MC_MODE ? R.raw.mc_on_hit : R.raw.on_hit

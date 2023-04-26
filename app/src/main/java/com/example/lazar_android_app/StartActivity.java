@@ -1,11 +1,9 @@
 package com.example.lazar_android_app;
 
-
 import static com.example.lazar_android_app.HomeActivity.URL;
 import static com.example.lazar_android_app.HomeActivity.MC_MODE;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
@@ -13,8 +11,6 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
@@ -27,7 +23,6 @@ import android.widget.Toast;
 import com.android.volley.NetworkError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
@@ -37,7 +32,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 
 public class StartActivity extends AppCompatActivity {
@@ -73,7 +67,7 @@ public class StartActivity extends AppCompatActivity {
         // update room roster
         roster = findViewById(R.id.roster);
         usernames = new ArrayList<>();
-        adapter = new ArrayAdapter<String>(this,
+        adapter = new ArrayAdapter<>(this,
                 R.layout.text_array_adapter,
                 usernames);
         roster.setAdapter(adapter);
@@ -185,7 +179,7 @@ public class StartActivity extends AppCompatActivity {
 
         hideKeyboard();
 
-        if(username == null || username.isEmpty()) {
+        if(username.isEmpty()) {
             Toast.makeText(this, "Please enter a username.", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -226,7 +220,7 @@ public class StartActivity extends AppCompatActivity {
     /**
      * OnClick handler for the host's start button
      *
-     * @param view
+     * @param view The view
      */
     public void hostTryStart(View view) {
         JSONObject body = new JSONObject();
@@ -271,12 +265,10 @@ public class StartActivity extends AppCompatActivity {
         finish();
     }
 
-    private StringRequest helloWorldRequest = new StringRequest(Request.Method.GET, URL + "/hello-world",
-        response -> {
-            setConnected(true);
-        }, error -> {
-            setConnected(false);
-        });
+    private final StringRequest helloWorldRequest = new StringRequest(Request.Method.GET, URL + "/hello-world",
+        response -> setConnected(true),
+        error -> setConnected(false)
+    );
 
     private JsonObjectRequest getJoinRequest(JSONObject requestBody) {
         return new JsonObjectRequest(Request.Method.POST, URL + "/join", requestBody,
@@ -378,14 +370,17 @@ public class StartActivity extends AppCompatActivity {
                 // regardless of if the roster updated, CHECK IF THE GAME STARTED AND REACT
 
                 // Check if host has started game! If so, start game!
-                if (_gameStatus.equals("IN_PROGRESS")) {
-                    startGame();
-                } else if (_gameStatus.equals("ABANDONED")) {
-                    returnToHome("Game was abandoned by the host.");
-                } else if (_gameStatus.equals("IN_LOBBY")) {
-                    return;
-                } else {
-                    throw new RuntimeException();
+                switch (_gameStatus) {
+                    case "IN_PROGRESS":
+                        startGame();
+                        break;
+                    case "ABANDONED":
+                        returnToHome("Game was abandoned by the host.");
+                        break;
+                    case "IN_LOBBY":
+                        return;
+                    default:
+                        throw new RuntimeException();
                 }
             }, error -> {
                 try {
