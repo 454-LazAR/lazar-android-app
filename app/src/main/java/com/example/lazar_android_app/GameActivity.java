@@ -1,6 +1,8 @@
 package com.example.lazar_android_app;
 
 import static com.example.lazar_android_app.HomeActivity.URL;
+import static com.example.lazar_android_app.HomeActivity.MC_MODE;
+import static com.example.lazar_android_app.HomeActivity.SOUND;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -16,6 +18,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -40,9 +43,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.lifecycle.LifecycleOwner;
 
-import com.android.volley.Network;
 import com.android.volley.NetworkError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -163,6 +164,9 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
+
+        // Play game start noise
+        tryPlaySound(MC_MODE ? R.raw.mc_cave_noise : R.raw.mc_cave_noise);
 
         // Define async thread to run game pings
         gameHandler = new Handler();
@@ -357,7 +361,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
 
         preview.setSurfaceProvider(mPreviewView.createSurfaceProvider());
-        camera = cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview, imageAnalysis, imageCapture);
+        camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis, imageCapture);
         cameraControl = camera.getCameraControl();
 
         // initialize object detector
@@ -412,9 +416,12 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     /**
      * Onclick handler for the FIRE button.
      *
-     * @param view
+     * @param view The view
      */
     public void fireLazar(View view) {
+        // laser noise
+        tryPlaySound(MC_MODE ? R.raw.mc_shoot : R.raw.d_shoot);
+
         // grab image from mPreviewView and do human detection on it, bozo
         Bitmap captureBmp = mPreviewView.getBitmap();
         // TO-DO: double check how the orientation is grabbed
@@ -443,7 +450,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     /**
      * Onclick handler for the ZOOM button.
      *
-     * @param view
+     * @param view The view
      */
     public void zoomInCamera(View view) {
         // zoom in OR zoom out the camera
@@ -546,14 +553,11 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     public boolean PointInRectF(RectF bounds, int x, int y) {
         // left to right = less --> more
         // top to bottom = less --> more
-        if (x > bounds.left && x < bounds.right &&
-            y > bounds.top && y < bounds.bottom) {
-            // X/Y coords are completely within the RectF boundary box
-            return true;
-        }
+        // X/Y coords are completely within the RectF boundary box
+        return  x > bounds.left && x < bounds.right &&
+                y > bounds.top  && y < bounds.bottom;
 
         // at least one of the conditions isn't true, so it's not within the boundary box
-        return false;
     }
 
     public void beginHumanDetection() {
@@ -627,6 +631,12 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
+
+                // user has taken damage!
+                if (_health < healthBar.getProgress()) {
+                    tryPlaySound(MC_MODE ? R.raw.mc_get_hurt : R.raw.d_get_hurt);
+                }
+
                 healthBar.setProgress(_health);
             }, error -> {
                 // user disconnected
@@ -662,7 +672,10 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private StringRequest getCheckHitRequest(JSONObject requestBody) {
         return new StringRequest(Request.Method.POST, URL + "/check-hit",
                 response -> {
-                    if (Boolean.valueOf(response)) {
+                    if (Boolean.parseBoolean(response)) {
+                        // Play "on hit" sound
+                        tryPlaySound(MC_MODE ? R.raw.mc_on_hit : R.raw.d_on_hit);
+
                         if (DEBUG) {
                             fireButton.setBackgroundColor(Color.MAGENTA);
                         }
@@ -727,19 +740,15 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         stopDetection();
 
         ImageView skyPopup = findViewById(R.id.skyBackground);
-
         skyPopup.setVisibility(View.VISIBLE);
 
         ImageView victoryPopup = findViewById(R.id.winScreen);
         victoryPopup.setVisibility(View.VISIBLE);
 
-        Button exitButton = findViewById(R.id.exitButton);
-        Button fireButton = findViewById(R.id.fireButton);
-        exitButton.setText("YOU WIN");
-        fireButton.setVisibility(View.GONE);
-        exitButton.setVisibility(View.VISIBLE);
+        // play win noise
+        tryPlaySound(MC_MODE ? R.raw.mc_u_win : R.raw.mc_u_win);
 
-        visibilityGoneHelper();
+        gameOverVisibilityHelper(true);
     }
 
     /**
@@ -756,21 +765,28 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         ImageView lossPopup = findViewById(R.id.lossScreen);
         lossPopup.setVisibility(View.VISIBLE);
 
-        Button exitButton = findViewById(R.id.exitButton);
-        Button fireButton = findViewById(R.id.fireButton);
-        exitButton.setText("YOU LOSE");
-        fireButton.setVisibility(View.GONE);
-        exitButton.setVisibility(View.VISIBLE);
+        // play lose noise
+        tryPlaySound(MC_MODE ? R.raw.mc_u_ded : R.raw.mc_u_ded);
 
-        visibilityGoneHelper();
+        gameOverVisibilityHelper(false);
     }
 
-    private void visibilityGoneHelper(){
+    /**
+     * Helps hide and show some elements during the game over sequence.
+     *
+     * @param win True sets exit button to say "YOU WIN" and false sets it to say "R.I.P"
+     */
+    private void gameOverVisibilityHelper(Boolean win){
+        Button exitButton = findViewById(R.id.exitButton);
+        Button fireButton = findViewById(R.id.fireButton);
         ImageView capture = findViewById(R.id.capture);
         TextView latView = findViewById(R.id.latView);
         TextView longView = findViewById(R.id.longView);
         TextView bearView = findViewById(R.id.bearView);
         Button zoomButton = findViewById(R.id.zoomButton);
+        exitButton.setText(win ? "YOU WIN" : "R.I.P.");
+        fireButton.setVisibility(View.GONE);
+        exitButton.setVisibility(View.VISIBLE);
         capture.setVisibility(View.GONE);
         latView.setVisibility(View.GONE);
         longView.setVisibility(View.GONE);
@@ -789,5 +805,12 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
         startActivity(homeScreen);
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         finish();
+    }
+
+    public void tryPlaySound(int soundId) {
+        if (SOUND) {
+            MediaPlayer mp = MediaPlayer.create(this, soundId);
+            mp.start();
+        }
     }
 }

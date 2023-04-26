@@ -9,11 +9,10 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -33,15 +32,14 @@ public class HomeActivity extends AppCompatActivity {
     private Runnable connRunnable;
     private RequestQueue queue;
     protected static final String URL = "https://laz-ar.duckdns.org:8443";
-
+    protected static final Boolean MC_MODE = true;
+    protected static final Boolean SOUND = true;
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"};
     private final int REQUEST_CODE_PERMISSIONS = 1001;
-    private StringRequest helloWorldRequest = new StringRequest(Request.Method.GET, URL + "/hello-world",
-            response -> {
-                setConnected(true);
-            }, error -> {
-        setConnected(false);
-    });
+    private final StringRequest helloWorldRequest = new StringRequest(Request.Method.GET, URL + "/hello-world",
+        response -> setConnected(true),
+        error -> setConnected(false)
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,7 +93,7 @@ public class HomeActivity extends AppCompatActivity {
             Intent startStart = new Intent(getApplicationContext(), StartActivity.class);
             startStart.putExtra("mode", "HOST");
             stopConnTask();
-            queue.cancelAll(request -> true);;
+            queue.cancelAll(request -> true);
             startActivity(startStart);
             finish();
         }
@@ -125,7 +123,7 @@ public class HomeActivity extends AppCompatActivity {
 
         hideKeyboard();
 
-        if(code == null || code.isEmpty() || code.length() != 6) {
+        if(code.length() != 6) {
             Toast.makeText(this, "Your game ID should be a 6-character alphanumeric code.", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -135,7 +133,7 @@ public class HomeActivity extends AppCompatActivity {
         startStart.putExtra("mode", "JOIN");
         startStart.putExtra("roomCode", code);
         stopConnTask();
-        queue.cancelAll(request -> true);;
+        queue.cancelAll(request -> true);
         startActivity(startStart);
         finish();
     }
@@ -149,6 +147,9 @@ public class HomeActivity extends AppCompatActivity {
 
     private void setConnected(boolean connected) {
         TextView connection = findViewById(R.id.serverConnection);
+
+        // Uncomment if u want a noise every time the connection is updated (for debugging)
+//        tryPlaySound(MC_MODE ? R.raw.mc_villagerhmm : R.raw.mc_villagerhmm)
 
         if (connected) {
             connection.setTextColor(Color.GREEN);
@@ -174,6 +175,13 @@ public class HomeActivity extends AppCompatActivity {
             }
         }
         return true;
+    }
+
+    public void tryPlaySound(int soundId) {
+        if (SOUND) {
+            MediaPlayer mp = MediaPlayer.create(this, soundId);
+            mp.start();
+        }
     }
 
 }
