@@ -307,8 +307,10 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      */
     private void stopDetection() {
         //queue.cancelAll(request -> true);
-        stopHumanDetection = true;
-        detectHandler.removeCallbacks(detectRunnable);
+        if (ENABLE_DETECTION_INDICATOR) {
+            stopHumanDetection = true;
+            detectHandler.removeCallbacks(detectRunnable);
+        }
     }
 
     /**
@@ -698,9 +700,10 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                         toast.show();
                     }
                     else if (error.networkResponse.statusCode == 400) {
-                        Toast toast = Toast.makeText(getApplicationContext(), "Error checking hit -- Bad Request", Toast.LENGTH_LONG);
-                        toast.show();
-                        returnHome(null);
+                        // player is inactive or game is already over, do nothing
+                    }
+                    else if (error.networkResponse.statusCode == 401) {
+                        // player is already dead, do nothing
                     }
                     else if (error.networkResponse.statusCode == 404) {
                         Toast toast = Toast.makeText(getApplicationContext(), "Error checking hit -- Game doesn't exist", Toast.LENGTH_LONG);
