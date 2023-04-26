@@ -356,7 +356,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     public void fireLazar(View view) {
         // laser noise
         MediaPlayer mp = MediaPlayer.create(this,
-                MC_MODE ? R.raw.mc_shoot : R.raw.mc_shoot
+                MC_MODE ? R.raw.mc_shoot : R.raw.shoot
         );
         mp.start();
 
@@ -559,7 +559,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 // user has taken damage!
                 if (_health < healthBar.getProgress()) {
                     MediaPlayer mp = MediaPlayer.create(this,
-                            MC_MODE ? R.raw.mc_get_hurt : R.raw.mc_get_hurt
+                            MC_MODE ? R.raw.mc_get_hurt : R.raw.get_hurt
                     );
                     mp.start();
                 }
@@ -602,7 +602,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                     if (Boolean.valueOf(response)) {
                         // Play "on hit" sound
                         MediaPlayer mp = MediaPlayer.create(this,
-                                MC_MODE ? R.raw.mc_on_hit : R.raw.mc_on_hit
+                                MC_MODE ? R.raw.mc_on_hit : R.raw.on_hit
                         );
                         mp.start();
 
