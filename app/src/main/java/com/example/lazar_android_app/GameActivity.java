@@ -1,8 +1,9 @@
 package com.example.lazar_android_app;
 
 import static com.example.lazar_android_app.HomeActivity.URL;
-import static com.example.lazar_android_app.HomeActivity.MC_MODE;
 import static com.example.lazar_android_app.HomeActivity.SOUND;
+import static com.example.lazar_android_app.HomeActivity.MC_MODE;
+import static com.example.lazar_android_app.HomeActivity.HIGHLIGHTER;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -69,7 +70,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
 
     private final boolean DEBUG = false;
-    private final boolean ENABLE_DETECTION_INDICATOR = false;
+    private final boolean ENABLE_DETECTION_INDICATOR = HIGHLIGHTER;
     private final int DETECTION_INDICATOR_DELAY = 200;
     private boolean ZOOMED = false;
     private String _userId;

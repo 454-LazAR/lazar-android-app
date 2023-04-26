@@ -66,6 +66,7 @@
             android:id="@+id/joinButton"
             android:onClick="joinGame"
             style="@style/ButtonHome"
+            android:backgroundTint="@color/dark_gray"
             android:text="@string/join" />
         <LinearLayout
             android:id="@+id/joinCodeLayout"
@@ -83,15 +84,27 @@
                 android:layout_height="wrap_content"
                 android:onClick="submitRoomCode"
                 style="@style/ButtonHome"
+                android:backgroundTint="@color/dark_gray"
                 android:text="GO" />
         </LinearLayout>
         <Button
-            android:id="@+id/exit"
-            android:onClick="onDestroy"
-            android:text="@string/quit"
+            android:id="@+id/sounds"
+            android:onClick="toggleSounds"
+            android:text="SOUND"
+            style="@style/ButtonHome" />
+        <Button
+            android:id="@+id/mcMode"
+            android:onClick="toggleMcMode"
+            android:text="MINECRAFT?!"
+            style="@style/ButtonHome" />
+        <Button
+            android:id="@+id/highlighter"
+            android:onClick="toggleHighlighter"
+            android:text="LIVE DETECT"
             style="@style/ButtonHome" />
 
-<!--        <Button-->
+
+        <!--        <Button-->
 <!--            android:id="@+id/gamebutton"-->
 <!--            android:layout_width="wrap_content"-->
 <!--            android:layout_height="wrap_content"-->
