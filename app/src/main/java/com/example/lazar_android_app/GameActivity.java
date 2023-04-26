@@ -618,6 +618,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 try {
                     if(readyToFire != 0) {
                         readyToFire--;
+                        return;
                     }
                     _gameStatus = response.getString("gameStatus");
                     _health = response.getInt("health");
