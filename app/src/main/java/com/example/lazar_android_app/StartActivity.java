@@ -1,7 +1,6 @@
 package com.example.lazar_android_app;
 
 import static com.example.lazar_android_app.HomeActivity.URL;
-import static com.example.lazar_android_app.HomeActivity.MC_MODE;
 import static com.example.lazar_android_app.HomeActivity.SOUND;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,7 +20,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.volley.NetworkError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
@@ -354,7 +352,7 @@ public class StartActivity extends AppCompatActivity {
                         tryPlaySound(0);
 
                         if (SOUND) {
-                            MediaPlayer mp = MediaPlayer.create(this, R.raw.discord_join);
+                            MediaPlayer mp = MediaPlayer.create(this, R.raw.d_discord_join);
                             mp.start();
                         }
                     }

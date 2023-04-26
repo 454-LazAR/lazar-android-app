@@ -352,7 +352,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
      */
     public void fireLazar(View view) {
         // laser noise
-        tryPlaySound(MC_MODE ? R.raw.mc_shoot : R.raw.shoot);
+        tryPlaySound(MC_MODE ? R.raw.mc_shoot : R.raw.d_shoot);
 
         // grab image from mPreviewView and do human detection on it, bozo
         Bitmap captureBmp = mPreviewView.getBitmap();
@@ -552,7 +552,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
 
                 // user has taken damage!
                 if (_health < healthBar.getProgress()) {
-                    tryPlaySound(MC_MODE ? R.raw.mc_get_hurt : R.raw.get_hurt);
+                    tryPlaySound(MC_MODE ? R.raw.mc_get_hurt : R.raw.d_get_hurt);
                 }
 
                 healthBar.setProgress(_health);
@@ -592,7 +592,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 response -> {
                     if (Boolean.parseBoolean(response)) {
                         // Play "on hit" sound
-                        tryPlaySound(MC_MODE ? R.raw.mc_on_hit : R.raw.on_hit);
+                        tryPlaySound(MC_MODE ? R.raw.mc_on_hit : R.raw.d_on_hit);
 
                         if (DEBUG) {
                             fireButton.setBackgroundColor(Color.MAGENTA);
