@@ -31,6 +31,9 @@ public class HomeActivity extends AppCompatActivity {
     protected static Boolean MC_MODE = false;
     protected static Boolean HIGHLIGHTER = false;
 
+    protected static int BGMChoice = 0;
+
+    private Intent BGMIntent;
     private Handler connHandler;
     private Runnable connRunnable;
     private RequestQueue queue;
@@ -41,7 +44,6 @@ public class HomeActivity extends AppCompatActivity {
         response -> setConnected(true),
         error -> setConnected(false)
     );
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,9 +75,27 @@ public class HomeActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
 
         }
+
+        playBackgroundMusic();
+
         // Start the async connection thread
         startConnTask();
     }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        stopService(BGMIntent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        playBackgroundMusic();
+    }
+
 
     /**
      * Run this to start the async connection thread!
@@ -91,6 +111,14 @@ public class HomeActivity extends AppCompatActivity {
         connHandler.removeCallbacks(connRunnable);
     }
 
+    /**
+     * Starts background music
+     */
+    public void playBackgroundMusic() {
+        if(!SOUND) return;
+        BGMIntent = new Intent(this, BackgroundMusicService.class);
+        startService(BGMIntent);
+    }
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -198,6 +226,13 @@ public class HomeActivity extends AppCompatActivity {
 
         Button soundSetting = findViewById(R.id.sounds);
         soundSetting.setBackgroundColor(SOUND ? Color.GREEN : Color.RED);
+
+        if (SOUND) {
+            playBackgroundMusic();
+        }
+        else {
+            stopService(BGMIntent);
+        }
     }
     public void toggleMcMode(View view) {
         MC_MODE = !MC_MODE;

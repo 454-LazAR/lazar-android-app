@@ -2,8 +2,6 @@ package com.example.lazar_android_app;
 
 import static com.example.lazar_android_app.HomeActivity.URL;
 import static com.example.lazar_android_app.HomeActivity.SOUND;
-import static com.example.lazar_android_app.HomeActivity.MC_MODE;
-import static com.example.lazar_android_app.HomeActivity.HIGHLIGHTER;
 
 import androidx.appcompat.app.AppCompatActivity;
 import android.app.Activity;
@@ -49,6 +47,8 @@ public class StartActivity extends AppCompatActivity {
     private String _gameStatus;
 
     private RequestQueue queue;
+
+    private Intent BGMIntent;
 
     @Override
     public void onBackPressed() {
@@ -122,6 +122,19 @@ public class StartActivity extends AppCompatActivity {
         startConnTask();
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        stopService(BGMIntent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        playBackgroundMusic();
+    }
     private void hideKeyboard() {
         InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
         if(getCurrentFocus() != null) {
@@ -235,6 +248,15 @@ public class StartActivity extends AppCompatActivity {
     }
 
     /**
+     * Starts background music.
+     */
+    public void playBackgroundMusic() {
+        if(!SOUND) return;
+        BGMIntent = new Intent(this, BackgroundMusicService.class);
+        startService(BGMIntent);
+    }
+
+    /**
      * Hosts and non-hosts can run this method to switch over from the lobby to the in progress game
      * activity.
      *
@@ -244,6 +266,9 @@ public class StartActivity extends AppCompatActivity {
     private void startGame() {
         // Stop the running threads!! We're starting a GAME bestie LET'S GOOOOOOO
         stopLobbyPing();
+
+        // Stop background music
+        stopService(BGMIntent);
 
         // Put extras to transfer data to GameActivity, then start the game activity
         Intent startGame = new Intent(getApplicationContext(), GameActivity.class);
