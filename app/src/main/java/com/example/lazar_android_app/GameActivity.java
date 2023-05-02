@@ -94,7 +94,7 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
     private FusedLocationProviderClient fusedLocationProviderClient;
     private boolean stopHumanDetection = false;
 
-    private static int readyToFire = 2;
+    private int readyToFire = 2;
 
     Camera camera;
     CameraControl cameraControl;
@@ -618,7 +618,6 @@ public class GameActivity extends AppCompatActivity implements SensorEventListen
                 try {
                     if(readyToFire != 0) {
                         readyToFire--;
-                        return;
                     }
                     _gameStatus = response.getString("gameStatus");
                     _health = response.getInt("health");
